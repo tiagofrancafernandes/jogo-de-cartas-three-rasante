@@ -17,6 +17,7 @@ export class UIManager {
     private activeHistoryTab: 'recent' | 'best' = 'recent';
     private currentViewMode: '3D' | '2D' = '3D';
     private currentDistance: 'far' | 'normal' | 'near' = 'normal';
+    private isGameInProgress: boolean = false;
     private lastStatusMessage: string = '';
     private lastMatchData: {
         outcome: RoundOutcome;
@@ -272,12 +273,93 @@ export class UIManager {
             }
         }
 
+        this.setGameInProgress(false);
+
         modal.classList.remove('hidden');
         modal.classList.add('flex');
     }
 
     public hideGameOverModal(): void {
         const modal = document.getElementById('modal-game-over');
+
+        if (!modal) {
+            return;
+        }
+
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
+
+    public setGameInProgress(inProgress: boolean): void {
+        this.isGameInProgress = inProgress;
+        this.updateRestartButtonState();
+    }
+
+    public isGameActive(): boolean {
+        return this.isGameInProgress;
+    }
+
+    public updateRestartButtonState(): void {
+        const restartBtn = document.getElementById('btn-restart');
+        const iconElement = document.getElementById('icon-restart');
+        const labelElement = document.getElementById('label-restart');
+        const t = i18n.t();
+
+        if (!restartBtn || !iconElement || !labelElement) {
+            return;
+        }
+
+        if (this.isGameInProgress) {
+            restartBtn.setAttribute('title', t.restartGame);
+            labelElement.textContent = t.restartGame;
+            iconElement.setAttribute('icon', 'fa7-solid:rotate-right');
+            restartBtn.className =
+                'px-3 py-1.5 rounded-xl bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 border border-rose-800/60 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-sm';
+            return;
+        }
+
+        restartBtn.setAttribute('title', t.startGame);
+        labelElement.textContent = t.startGame;
+        iconElement.setAttribute('icon', 'fa7-solid:play');
+        restartBtn.className =
+            'px-3 py-1.5 rounded-xl bg-emerald-950/40 hover:bg-emerald-900/60 text-emerald-300 border border-emerald-800/60 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-sm';
+    }
+
+    public showConfirmRestartModal(): void {
+        const modal = document.getElementById('modal-confirm-restart');
+
+        if (!modal) {
+            return;
+        }
+
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    }
+
+    public hideConfirmRestartModal(): void {
+        const modal = document.getElementById('modal-confirm-restart');
+
+        if (!modal) {
+            return;
+        }
+
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
+
+    public showStartModal(): void {
+        const modal = document.getElementById('modal-start');
+
+        if (!modal) {
+            return;
+        }
+
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    }
+
+    public hideStartModal(): void {
+        const modal = document.getElementById('modal-start');
 
         if (!modal) {
             return;
@@ -396,9 +478,10 @@ export class UIManager {
             <iconify-icon icon="fa7-solid:trophy" class="w-4 h-4 text-amber-400"></iconify-icon>
           </button>
 
-          <!-- New Game Button -->
-          <button id="btn-restart" class="p-2 rounded-xl bg-slate-800 hover:bg-rose-900/60 text-slate-200 text-sm font-medium transition cursor-pointer" title="${t.newGame}">
-            <iconify-icon icon="fa7-solid:rotate-right" class="w-4 h-4 text-rose-400"></iconify-icon>
+          <!-- Start / Restart Button -->
+          <button id="btn-restart" class="px-3 py-1.5 rounded-xl bg-emerald-950/40 hover:bg-emerald-900/60 text-emerald-300 border border-emerald-800/60 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-sm" title="${t.startGame}">
+            <iconify-icon id="icon-restart" icon="fa7-solid:play" class="w-3.5 h-3.5"></iconify-icon>
+            <span id="label-restart">${t.startGame}</span>
           </button>
         </div>
       </header>
@@ -571,6 +654,60 @@ export class UIManager {
           </div>
         </div>
       </div>
+
+      <!-- Confirm Restart Modal -->
+      <div id="modal-confirm-restart" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md hidden items-center justify-center z-50 p-4">
+        <div class="bg-slate-900 border border-slate-700 rounded-3xl p-6 max-w-md w-full shadow-2xl flex flex-col gap-4">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-rose-500/20 border border-rose-500/40 flex items-center justify-center text-rose-400">
+                <iconify-icon icon="fa7-solid:triangle-exclamation" class="w-5 h-5 text-xl"></iconify-icon>
+              </div>
+              <h2 id="confirm-restart-title" class="text-lg font-black text-white uppercase tracking-wider">${t.confirmRestartTitle}</h2>
+            </div>
+            <button id="btn-close-confirm-restart" class="p-2 text-slate-400 hover:text-white transition cursor-pointer" title="${t.close}">
+              <iconify-icon icon="fa7-solid:xmark" class="w-6 h-6 text-2xl"></iconify-icon>
+            </button>
+          </div>
+
+          <p id="confirm-restart-message" class="text-xs sm:text-sm text-slate-300 leading-relaxed">${t.confirmRestartMessage}</p>
+
+          <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
+            <button id="btn-cancel-restart" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition cursor-pointer">
+              <span id="btn-cancel-restart-label">${t.confirmRestartCancel}</span>
+            </button>
+            <button id="btn-confirm-restart" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-rose-600 to-red-700 hover:from-rose-500 hover:to-red-600 text-white text-xs font-black uppercase tracking-wider transition cursor-pointer flex items-center gap-2 shadow-lg shadow-rose-950/50">
+              <iconify-icon icon="fa7-solid:rotate-right" class="w-3.5 h-3.5"></iconify-icon>
+              <span id="btn-confirm-restart-label">${t.confirmRestartYes}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Welcome / Start Game Modal -->
+      <div id="modal-start" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md hidden items-center justify-center z-40 p-4">
+        <div class="bg-slate-900/95 border border-slate-700/80 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl flex flex-col items-center text-center gap-5">
+          <div class="w-16 h-16 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 shadow-inner">
+            <iconify-icon icon="fa7-solid:plane-departure" class="w-8 h-8 text-4xl"></iconify-icon>
+          </div>
+
+          <div>
+            <h2 id="start-modal-title" class="text-2xl font-black text-white tracking-wide uppercase">${t.startModalTitle}</h2>
+            <p id="start-modal-subtitle" class="text-xs sm:text-sm text-slate-300 mt-2 leading-relaxed max-w-xs mx-auto">${t.startModalSubtitle}</p>
+          </div>
+
+          <div class="flex flex-col sm:flex-row items-center gap-3 w-full pt-2">
+            <button id="btn-rules-hero" class="w-full sm:flex-1 py-3 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition cursor-pointer border border-slate-600">
+              <iconify-icon icon="fa7-solid:book-open" class="w-4 h-4 text-emerald-400"></iconify-icon>
+              <span id="label-rules-hero">${t.rules}</span>
+            </button>
+            <button id="btn-start-hero" class="w-full sm:flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 text-white font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition cursor-pointer shadow-lg shadow-emerald-950/50">
+              <iconify-icon icon="fa7-solid:play" class="w-4 h-4"></iconify-icon>
+              <span id="label-start-hero">${t.startModalButton}</span>
+            </button>
+          </div>
+        </div>
+      </div>
     `;
 
         this.renderRulesContent();
@@ -609,6 +746,12 @@ export class UIManager {
 
         if (restartButton) {
             restartButton.addEventListener('click', () => {
+                if (this.isGameInProgress) {
+                    this.showConfirmRestartModal();
+                    return;
+                }
+
+                this.hideStartModal();
                 this.handlers.onNewGame();
             });
         }
@@ -707,6 +850,62 @@ export class UIManager {
                 this.handleSaveScore();
             });
         }
+
+        const confirmRestartButton = document.getElementById('btn-confirm-restart');
+        const cancelRestartButton = document.getElementById('btn-cancel-restart');
+        const closeConfirmRestartButton = document.getElementById('btn-close-confirm-restart');
+        const confirmRestartModal = document.getElementById('modal-confirm-restart');
+        const startHeroButton = document.getElementById('btn-start-hero');
+        const rulesHeroButton = document.getElementById('btn-rules-hero');
+
+        if (confirmRestartButton) {
+            confirmRestartButton.addEventListener('click', () => {
+                this.hideConfirmRestartModal();
+                this.hideStartModal();
+                this.handlers.onNewGame();
+            });
+        }
+
+        if (cancelRestartButton) {
+            cancelRestartButton.addEventListener('click', () => {
+                this.hideConfirmRestartModal();
+            });
+        }
+
+        if (closeConfirmRestartButton) {
+            closeConfirmRestartButton.addEventListener('click', () => {
+                this.hideConfirmRestartModal();
+            });
+        }
+
+        if (confirmRestartModal) {
+            confirmRestartModal.addEventListener('click', (event) => {
+                if (event.target === confirmRestartModal) {
+                    this.hideConfirmRestartModal();
+                }
+            });
+        }
+
+        if (startHeroButton) {
+            startHeroButton.addEventListener('click', () => {
+                this.hideStartModal();
+                this.handlers.onNewGame();
+            });
+        }
+
+        if (rulesHeroButton) {
+            rulesHeroButton.addEventListener('click', () => {
+                this.showRulesModal();
+            });
+        }
+
+        window.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') {
+                this.hideConfirmRestartModal();
+                this.hideRulesModal();
+                this.hideHistoryModal();
+            }
+        });
     }
 
     private handleSaveScore(): void {
@@ -924,6 +1123,7 @@ export class UIManager {
         const en = translations['en-US'];
         const t = i18n.t();
         const statusKeys: Array<keyof Translations> = [
+            'startMatchPrompt',
             'yourTurn',
             'cpuThinking',
             'cpuTurn',
@@ -967,9 +1167,53 @@ export class UIManager {
             openHistoryBtn.setAttribute('title', t.history);
         }
 
-        const restartBtn = document.getElementById('btn-restart');
-        if (restartBtn) {
-            restartBtn.setAttribute('title', t.newGame);
+        this.updateRestartButtonState();
+
+        const confirmRestartTitle = document.getElementById('confirm-restart-title');
+        const confirmRestartMessage = document.getElementById('confirm-restart-message');
+        const cancelRestartLabel = document.getElementById('btn-cancel-restart-label');
+        const confirmRestartLabel = document.getElementById('btn-confirm-restart-label');
+        const closeConfirmRestartBtn = document.getElementById('btn-close-confirm-restart');
+
+        if (confirmRestartTitle) {
+            confirmRestartTitle.textContent = t.confirmRestartTitle;
+        }
+
+        if (confirmRestartMessage) {
+            confirmRestartMessage.textContent = t.confirmRestartMessage;
+        }
+
+        if (cancelRestartLabel) {
+            cancelRestartLabel.textContent = t.confirmRestartCancel;
+        }
+
+        if (confirmRestartLabel) {
+            confirmRestartLabel.textContent = t.confirmRestartYes;
+        }
+
+        if (closeConfirmRestartBtn) {
+            closeConfirmRestartBtn.setAttribute('title', t.close);
+        }
+
+        const startModalTitle = document.getElementById('start-modal-title');
+        const startModalSubtitle = document.getElementById('start-modal-subtitle');
+        const labelRulesHero = document.getElementById('label-rules-hero');
+        const labelStartHero = document.getElementById('label-start-hero');
+
+        if (startModalTitle) {
+            startModalTitle.textContent = t.startModalTitle;
+        }
+
+        if (startModalSubtitle) {
+            startModalSubtitle.textContent = t.startModalSubtitle;
+        }
+
+        if (labelRulesHero) {
+            labelRulesHero.textContent = t.rules;
+        }
+
+        if (labelStartHero) {
+            labelStartHero.textContent = t.startModalButton;
         }
 
         const drawLabel = document.getElementById('btn-draw-label');

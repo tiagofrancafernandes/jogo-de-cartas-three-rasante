@@ -58,7 +58,10 @@ class GameApp {
 
         this.rulesEngine = new RulesEngine();
         this.startRenderLoop();
-        this.startNewGame();
+        this.uiManager.setGameInProgress(false);
+        this.uiManager.setActionButtonsEnabled(false);
+        this.uiManager.updateStatus(i18n.t().startMatchPrompt);
+        this.uiManager.showStartModal();
     }
 
     private handleToggleViewMode(): void {
@@ -78,7 +81,10 @@ class GameApp {
             this.cpuTurnTimeoutId = null;
         }
 
+        this.animationQueue.reset();
+        this.uiManager.hideStartModal();
         this.uiManager.hideGameOverModal();
+        this.uiManager.setGameInProgress(true);
         this.clearAllCardMeshes();
 
         const deck = new CardDeck();
@@ -249,6 +255,7 @@ class GameApp {
         }
 
         this.uiManager.setActionButtonsEnabled(false);
+        this.uiManager.setGameInProgress(false);
         this.sceneManager.setInteractive(false);
 
         const evaluation = this.rulesEngine.evaluatePouso('PLAYER');
@@ -288,6 +295,7 @@ class GameApp {
         const decision = this.aiController.decideNextMove(this.rulesEngine);
 
         if (decision.action === 'POUSAR') {
+            this.uiManager.setGameInProgress(false);
             const evaluation = this.rulesEngine.evaluatePouso('CPU');
             await this.animationQueue.animateRevealCpuHand(this.getCpuCardMeshes());
             this.updateHUD();
@@ -394,6 +402,7 @@ class GameApp {
     }
 
     private async handleGameOver(): Promise<void> {
+        this.uiManager.setGameInProgress(false);
         const outcome = this.rulesEngine.getRoundOutcome() || 'DRAW';
         const reason = this.rulesEngine.getEndReason() || '';
         const playerScore = this.rulesEngine.calculateHandScore(this.rulesEngine.getPlayerHand());

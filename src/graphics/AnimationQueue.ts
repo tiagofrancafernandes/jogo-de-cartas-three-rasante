@@ -18,6 +18,11 @@ export class AnimationQueue {
         this.isBusyFlag = busy;
     }
 
+    public reset(): void {
+        gsap.killTweensOf('*');
+        this.isBusyFlag = false;
+    }
+
     public setViewMode(mode: '3D' | '2D'): void {
         this.viewMode = mode;
     }

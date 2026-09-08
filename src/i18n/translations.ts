@@ -65,6 +65,16 @@ export interface Translations {
     distFar: string;
     distNormal: string;
     distNear: string;
+    startGame: string;
+    restartGame: string;
+    startMatchPrompt: string;
+    startModalTitle: string;
+    startModalSubtitle: string;
+    startModalButton: string;
+    confirmRestartTitle: string;
+    confirmRestartMessage: string;
+    confirmRestartYes: string;
+    confirmRestartCancel: string;
 }
 
 export const translations: Record<SupportedLocale, Translations> = {
@@ -138,6 +148,17 @@ export const translations: Record<SupportedLocale, Translations> = {
         distFar: 'Menor',
         distNormal: 'Normal',
         distNear: 'Perto',
+        startGame: 'Começar',
+        restartGame: 'Recomeçar',
+        startMatchPrompt: 'Pronto para jogar. Clique em Começar para iniciar a partida.',
+        startModalTitle: 'Pronto para Decolar?',
+        startModalSubtitle: 'Acumule a menor pontuação em 3 cartas e bata no momento certo para vencer o oponente.',
+        startModalButton: 'Começar Partida',
+        confirmRestartTitle: 'Recomeçar Partida?',
+        confirmRestartMessage:
+            'A partida atual está em andamento. Tem certeza de que deseja reiniciar? Todo o progresso desta rodada será perdido.',
+        confirmRestartYes: 'Sim, Recomeçar',
+        confirmRestartCancel: 'Continuar Jogando',
     },
     'en-US': {
         gameTitle: 'Rasante',
@@ -209,5 +230,17 @@ export const translations: Record<SupportedLocale, Translations> = {
         distFar: 'Far',
         distNormal: 'Normal',
         distNear: 'Near',
+        startGame: 'Start',
+        restartGame: 'Restart',
+        startMatchPrompt: 'Ready to play. Click Start to begin the match.',
+        startModalTitle: 'Ready for Takeoff?',
+        startModalSubtitle:
+            'Accumulate the lowest score with 3 cards and call Pousar at the right time to defeat the opponent.',
+        startModalButton: 'Start Match',
+        confirmRestartTitle: 'Restart Match?',
+        confirmRestartMessage:
+            'A match is currently in progress. Are you sure you want to restart? All progress from this round will be lost.',
+        confirmRestartYes: 'Yes, Restart',
+        confirmRestartCancel: 'Keep Playing',
     },
 };
