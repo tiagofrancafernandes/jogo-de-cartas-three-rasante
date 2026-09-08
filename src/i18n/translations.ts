@@ -78,6 +78,10 @@ export interface Translations {
     zoomIn: string;
     zoomOut: string;
     zoomText: string;
+    newMatch: string;
+    playAgainNoSave: string;
+    saveAndPlay: string;
+    savedBadge: string;
 }
 
 export const translations: Record<SupportedLocale, Translations> = {
@@ -165,6 +169,10 @@ export const translations: Record<SupportedLocale, Translations> = {
         zoomIn: 'Aumentar texto (Zoom +)',
         zoomOut: 'Diminuir texto (Zoom -)',
         zoomText: 'Texto',
+        newMatch: 'Iniciar Nova Partida',
+        playAgainNoSave: 'Jogar Novamente (sem salvar)',
+        saveAndPlay: 'Salvar e Jogar',
+        savedBadge: 'Salvo!',
     },
     'en-US': {
         gameTitle: 'Rasante',
@@ -251,5 +259,9 @@ export const translations: Record<SupportedLocale, Translations> = {
         zoomIn: 'Increase text (Zoom +)',
         zoomOut: 'Decrease text (Zoom -)',
         zoomText: 'Text',
+        newMatch: 'Start New Match',
+        playAgainNoSave: 'Play Again (without saving)',
+        saveAndPlay: 'Save & Play',
+        savedBadge: 'Saved!',
     },
 };

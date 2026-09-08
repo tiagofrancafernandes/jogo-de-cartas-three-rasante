@@ -62,6 +62,9 @@ class GameApp {
         this.uiManager.setActionButtonsEnabled(false);
         this.uiManager.updateStatus(i18n.t().startMatchPrompt);
         this.uiManager.showStartModal();
+
+        (window as any).__gameApp = this;
+        (window as any).__uiManager = this.uiManager;
     }
 
     private handleToggleViewMode(): void {

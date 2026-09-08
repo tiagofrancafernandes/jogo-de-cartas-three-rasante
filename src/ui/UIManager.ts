@@ -25,6 +25,8 @@ export class UIManager {
     private currentViewMode: '3D' | '2D' = '3D';
     private currentDistance: 'far' | 'normal' | 'near' = 'normal';
     private isGameInProgress: boolean = false;
+    private hasCompletedMatch: boolean = false;
+    private hasSavedCurrentMatch: boolean = false;
     private rulesZoomLevel: number = 0;
     private lastStatusMessage: string = '';
     private lastMatchData: {
@@ -284,12 +286,14 @@ export class UIManager {
         }
 
         this.setGameInProgress(false);
+        this.hasCompletedMatch = true;
+        this.hasSavedCurrentMatch = false;
 
         modal.classList.remove('hidden');
         modal.classList.add('flex');
     }
 
-    public hideGameOverModal(): void {
+    public hideGameOverModal(triggeredByPlayAgain: boolean = false, triggeredBySave: boolean = false): void {
         const modal = document.getElementById('modal-game-over');
 
         if (!modal) {
@@ -298,10 +302,19 @@ export class UIManager {
 
         modal.classList.add('hidden');
         modal.classList.remove('flex');
+
+        if (!triggeredByPlayAgain && !triggeredBySave && !this.isGameInProgress && this.hasCompletedMatch) {
+            this.showStartModal();
+        }
     }
 
     public setGameInProgress(inProgress: boolean): void {
         this.isGameInProgress = inProgress;
+
+        if (inProgress) {
+            this.hasCompletedMatch = false;
+        }
+
         this.updateRestartButtonState();
     }
 
@@ -359,9 +372,70 @@ export class UIManager {
 
     public showStartModal(): void {
         const modal = document.getElementById('modal-start');
+        const titleElement = document.getElementById('start-modal-title');
+        const subtitleElement = document.getElementById('start-modal-subtitle');
+        const heroButton = document.getElementById('btn-start-hero');
+        const heroIcon = document.getElementById('icon-start-hero');
+        const heroLabel = document.getElementById('label-start-hero');
+        const saveButton = document.getElementById('btn-start-save-score') as HTMLButtonElement | null;
+        const nameInput = document.getElementById('input-start-player-name') as HTMLInputElement | null;
+        const t = i18n.t();
 
         if (!modal) {
             return;
+        }
+
+        if (nameInput) {
+            nameInput.value = this.scoreHistory.getLastPlayerName();
+        }
+
+        const isUnsavedWin =
+            this.hasCompletedMatch && this.lastMatchData?.outcome === 'PLAYER_WON' && !this.hasSavedCurrentMatch;
+
+        if (saveButton) {
+            if (isUnsavedWin) {
+                saveButton.classList.remove('hidden');
+                saveButton.disabled = false;
+            }
+            if (!isUnsavedWin) {
+                saveButton.classList.add('hidden');
+            }
+        }
+
+        if (this.hasCompletedMatch) {
+            if (titleElement) {
+                titleElement.textContent = t.newMatch;
+            }
+            if (subtitleElement) {
+                subtitleElement.textContent = t.startModalSubtitle;
+            }
+            if (heroIcon) {
+                heroIcon.setAttribute('icon', 'fa7-solid:rotate-right');
+            }
+            if (heroLabel) {
+                heroLabel.textContent = isUnsavedWin ? t.playAgainNoSave : t.playAgain;
+            }
+            if (heroButton) {
+                heroButton.setAttribute('title', isUnsavedWin ? t.playAgainNoSave : t.playAgain);
+            }
+        }
+
+        if (!this.hasCompletedMatch) {
+            if (titleElement) {
+                titleElement.textContent = t.startModalTitle;
+            }
+            if (subtitleElement) {
+                subtitleElement.textContent = t.startModalSubtitle;
+            }
+            if (heroIcon) {
+                heroIcon.setAttribute('icon', 'fa7-solid:play');
+            }
+            if (heroLabel) {
+                heroLabel.textContent = t.startModalButton;
+            }
+            if (heroButton) {
+                heroButton.setAttribute('title', t.startModalButton);
+            }
         }
 
         modal.classList.remove('hidden');
@@ -381,9 +455,21 @@ export class UIManager {
 
     public showHistoryModal(): void {
         const modal = document.getElementById('modal-history');
+        const playAgainBtn = document.getElementById('btn-history-play-again');
 
         if (!modal) {
             return;
+        }
+
+        const isAfterMatch = !this.isGameInProgress && this.hasCompletedMatch;
+
+        if (playAgainBtn) {
+            if (isAfterMatch) {
+                playAgainBtn.classList.remove('hidden');
+            }
+            if (!isAfterMatch) {
+                playAgainBtn.classList.add('hidden');
+            }
         }
 
         this.renderHistoryTable();
@@ -391,7 +477,7 @@ export class UIManager {
         modal.classList.add('flex');
     }
 
-    public hideHistoryModal(): void {
+    public hideHistoryModal(triggeredByPlayAgain: boolean = false): void {
         const modal = document.getElementById('modal-history');
 
         if (!modal) {
@@ -400,6 +486,10 @@ export class UIManager {
 
         modal.classList.add('hidden');
         modal.classList.remove('flex');
+
+        if (!triggeredByPlayAgain && !this.isGameInProgress && this.hasCompletedMatch) {
+            this.showStartModal();
+        }
     }
 
     public getRulesZoomLevel(): number {
@@ -650,7 +740,10 @@ export class UIManager {
 
       <!-- Game Over Modal -->
       <div id="modal-game-over" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md hidden items-center justify-center z-50 p-4">
-        <div class="bg-slate-900 border border-slate-700 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl flex flex-col gap-4 transform transition">
+        <div class="bg-slate-900 border border-slate-700 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl flex flex-col gap-4 transform transition relative">
+          <button id="btn-close-game-over" class="absolute top-4 right-4 p-2 text-slate-400 hover:text-white transition cursor-pointer" title="${t.close}">
+            <iconify-icon icon="fa7-solid:xmark" class="w-6 h-6 text-xl"></iconify-icon>
+          </button>
           <h2 id="modal-game-over-title" class="text-3xl font-black text-center tracking-wide text-emerald-400">${t.gameOverTitleWon}</h2>
           <p id="modal-game-over-reason" class="text-sm text-slate-300 text-center font-medium"></p>
 
@@ -727,9 +820,15 @@ export class UIManager {
               <iconify-icon icon="fa7-solid:trash-can" class="w-3.5 h-3.5"></iconify-icon>
               <span id="btn-clear-history-label">${t.clearHistory}</span>
             </button>
-            <button id="btn-close-history-bottom" class="px-5 py-2 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold rounded-xl transition cursor-pointer">
-              ${t.close}
-            </button>
+            <div class="flex items-center gap-2">
+              <button id="btn-history-play-again" class="hidden px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 text-white text-xs font-black uppercase tracking-wider rounded-xl transition cursor-pointer flex items-center gap-1.5 shadow-md shadow-emerald-950/40">
+                <iconify-icon icon="fa7-solid:play" class="w-3.5 h-3.5"></iconify-icon>
+                <span id="btn-history-play-again-label">${t.newMatch}</span>
+              </button>
+              <button id="btn-close-history-bottom" class="px-5 py-2 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold rounded-xl transition cursor-pointer">
+                ${t.close}
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -820,13 +919,25 @@ export class UIManager {
             <p id="start-modal-subtitle" class="text-xs sm:text-sm text-slate-300 mt-2 leading-relaxed max-w-xs mx-auto">${t.startModalSubtitle}</p>
           </div>
 
+          <!-- Player Name Input Container -->
+          <div id="container-start-player-name" class="w-full flex flex-col gap-1.5 text-left">
+            <label for="input-start-player-name" id="label-start-player-prompt" class="text-xs font-bold text-slate-400 uppercase tracking-wider">${t.playerNamePrompt}</label>
+            <input id="input-start-player-name" type="text" maxlength="24" class="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 text-white px-4 py-2.5 rounded-xl font-bold outline-none transition text-sm" placeholder="${t.playerNamePlaceholder}" />
+          </div>
+
+          <!-- Unsaved Win Save Option -->
+          <button id="btn-start-save-score" class="hidden w-full py-2.5 px-4 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition cursor-pointer shadow-md shadow-amber-950/40">
+            <iconify-icon icon="fa7-solid:floppy-disk" class="w-4 h-4"></iconify-icon>
+            <span id="btn-start-save-label">${t.saveScore}</span>
+          </button>
+
           <div class="flex flex-col sm:flex-row items-center gap-3 w-full pt-2">
             <button id="btn-rules-hero" class="w-full sm:flex-1 py-3 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition cursor-pointer border border-slate-600">
               <iconify-icon icon="fa7-solid:book-open" class="w-4 h-4 text-emerald-400"></iconify-icon>
               <span id="label-rules-hero">${t.rules}</span>
             </button>
             <button id="btn-start-hero" class="w-full sm:flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 text-white font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition cursor-pointer shadow-lg shadow-emerald-950/50">
-              <iconify-icon icon="fa7-solid:play" class="w-4 h-4"></iconify-icon>
+              <iconify-icon id="icon-start-hero" icon="fa7-solid:play" class="w-4 h-4"></iconify-icon>
               <span id="label-start-hero">${t.startModalButton}</span>
             </button>
           </div>
@@ -882,8 +993,30 @@ export class UIManager {
 
         if (playAgainButton) {
             playAgainButton.addEventListener('click', () => {
-                this.hideGameOverModal();
+                const gameOverNameInput = document.getElementById('input-player-name') as HTMLInputElement | null;
+                if (gameOverNameInput && gameOverNameInput.value.trim().length > 0) {
+                    this.scoreHistory.setLastPlayerName(gameOverNameInput.value.trim());
+                }
+
+                this.hasCompletedMatch = false;
+                this.hideGameOverModal(true);
                 this.handlers.onNewGame();
+            });
+        }
+
+        const closeGameOverButton = document.getElementById('btn-close-game-over');
+        if (closeGameOverButton) {
+            closeGameOverButton.addEventListener('click', () => {
+                this.hideGameOverModal(false, false);
+            });
+        }
+
+        const gameOverModal = document.getElementById('modal-game-over');
+        if (gameOverModal) {
+            gameOverModal.addEventListener('click', (event) => {
+                if (event.target === gameOverModal) {
+                    this.hideGameOverModal(false, false);
+                }
             });
         }
 
@@ -922,13 +1055,31 @@ export class UIManager {
 
         if (closeHistoryButton) {
             closeHistoryButton.addEventListener('click', () => {
-                this.hideHistoryModal();
+                this.hideHistoryModal(false);
             });
         }
 
         if (closeHistoryBottomButton) {
             closeHistoryBottomButton.addEventListener('click', () => {
-                this.hideHistoryModal();
+                this.hideHistoryModal(false);
+            });
+        }
+
+        const historyPlayAgainButton = document.getElementById('btn-history-play-again');
+        if (historyPlayAgainButton) {
+            historyPlayAgainButton.addEventListener('click', () => {
+                this.hasCompletedMatch = false;
+                this.hideHistoryModal(true);
+                this.handlers.onNewGame();
+            });
+        }
+
+        const historyModal = document.getElementById('modal-history');
+        if (historyModal) {
+            historyModal.addEventListener('click', (event) => {
+                if (event.target === historyModal) {
+                    this.hideHistoryModal(false);
+                }
             });
         }
 
@@ -954,6 +1105,15 @@ export class UIManager {
         if (closeRulesBottomButton) {
             closeRulesBottomButton.addEventListener('click', () => {
                 this.hideRulesModal();
+            });
+        }
+
+        const rulesModal = document.getElementById('modal-rules');
+        if (rulesModal) {
+            rulesModal.addEventListener('click', (event) => {
+                if (event.target === rulesModal) {
+                    this.hideRulesModal();
+                }
             });
         }
 
@@ -987,6 +1147,13 @@ export class UIManager {
         if (saveScoreButton) {
             saveScoreButton.addEventListener('click', () => {
                 this.handleSaveScore();
+            });
+        }
+
+        const startSaveScoreButton = document.getElementById('btn-start-save-score');
+        if (startSaveScoreButton) {
+            startSaveScoreButton.addEventListener('click', () => {
+                this.handleSaveScoreFromStartModal();
             });
         }
 
@@ -1027,6 +1194,12 @@ export class UIManager {
 
         if (startHeroButton) {
             startHeroButton.addEventListener('click', () => {
+                const startNameInput = document.getElementById('input-start-player-name') as HTMLInputElement | null;
+                if (startNameInput && startNameInput.value.trim().length > 0) {
+                    this.scoreHistory.setLastPlayerName(startNameInput.value.trim());
+                }
+
+                this.hasCompletedMatch = false;
                 this.hideStartModal();
                 this.handlers.onNewGame();
             });
@@ -1042,7 +1215,8 @@ export class UIManager {
             if (event.key === 'Escape') {
                 this.hideConfirmRestartModal();
                 this.hideRulesModal();
-                this.hideHistoryModal();
+                this.hideHistoryModal(false);
+                this.hideGameOverModal(false, false);
             }
         });
     }
@@ -1071,6 +1245,7 @@ export class UIManager {
         };
 
         this.scoreHistory.recordMatch(record);
+        this.hasSavedCurrentMatch = true;
 
         const saveButton = document.getElementById('btn-save-score') as HTMLButtonElement | null;
 
@@ -1078,15 +1253,56 @@ export class UIManager {
             saveButton.disabled = true;
             saveButton.innerHTML = `
         <iconify-icon icon="fa7-solid:check" class="w-5 h-5 text-xl text-emerald-950"></iconify-icon>
-        <span>Salvo!</span>
+        <span>${i18n.t().savedBadge}</span>
       `;
         }
 
-        // Auto open history after 400ms to showcase saved score
+        // Auto open history after 450ms to showcase saved score
         setTimeout(() => {
-            this.hideGameOverModal();
+            this.hideGameOverModal(false, true);
             this.showHistoryModal();
         }, 450);
+    }
+
+    private handleSaveScoreFromStartModal(): void {
+        if (!this.lastMatchData) {
+            return;
+        }
+
+        if (this.lastMatchData.outcome !== 'PLAYER_WON') {
+            return;
+        }
+
+        const startNameInput = document.getElementById('input-start-player-name') as HTMLInputElement | null;
+        const rawName = startNameInput ? startNameInput.value : '';
+        const playerName = rawName.trim().length > 0 ? rawName.trim() : this.scoreHistory.getLastPlayerName();
+
+        const record: MatchRecord = {
+            id: `match_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+            playerName,
+            playerScore: this.lastMatchData.playerScore,
+            cpuScore: this.lastMatchData.cpuScore,
+            outcome: this.lastMatchData.outcome,
+            reason: this.lastMatchData.reason,
+            timestamp: Date.now(),
+        };
+
+        this.scoreHistory.recordMatch(record);
+        this.hasSavedCurrentMatch = true;
+
+        const saveButton = document.getElementById('btn-start-save-score') as HTMLButtonElement | null;
+        if (saveButton) {
+            saveButton.disabled = true;
+            saveButton.innerHTML = `
+        <iconify-icon icon="fa7-solid:check" class="w-4 h-4 text-emerald-950"></iconify-icon>
+        <span>${i18n.t().savedBadge}</span>
+      `;
+        }
+
+        const heroLabel = document.getElementById('label-start-hero');
+        if (heroLabel) {
+            heroLabel.textContent = i18n.t().playAgain;
+        }
     }
 
     private switchHistoryTab(tab: 'recent' | 'best'): void {
@@ -1342,7 +1558,7 @@ export class UIManager {
         const labelStartHero = document.getElementById('label-start-hero');
 
         if (startModalTitle) {
-            startModalTitle.textContent = t.startModalTitle;
+            startModalTitle.textContent = this.hasCompletedMatch ? t.newMatch : t.startModalTitle;
         }
 
         if (startModalSubtitle) {
@@ -1354,7 +1570,15 @@ export class UIManager {
         }
 
         if (labelStartHero) {
-            labelStartHero.textContent = t.startModalButton;
+            const isUnsavedWin =
+                this.hasCompletedMatch && this.lastMatchData?.outcome === 'PLAYER_WON' && !this.hasSavedCurrentMatch;
+
+            if (this.hasCompletedMatch) {
+                labelStartHero.textContent = isUnsavedWin ? t.playAgainNoSave : t.playAgain;
+            }
+            if (!this.hasCompletedMatch) {
+                labelStartHero.textContent = t.startModalButton;
+            }
         }
 
         const zoomInRulesBtn = document.getElementById('btn-rules-zoom-in');
@@ -1402,6 +1626,31 @@ export class UIManager {
 
         if (playAgainLabel) {
             playAgainLabel.textContent = t.playAgain;
+        }
+
+        const historyPlayAgainLabel = document.getElementById('btn-history-play-again-label');
+        if (historyPlayAgainLabel) {
+            historyPlayAgainLabel.textContent = t.newMatch;
+        }
+
+        const startSaveLabel = document.getElementById('btn-start-save-label');
+        if (startSaveLabel) {
+            startSaveLabel.textContent = t.saveScore;
+        }
+
+        const startPlayerPromptLabel = document.getElementById('label-start-player-prompt');
+        if (startPlayerPromptLabel) {
+            startPlayerPromptLabel.textContent = t.playerNamePrompt;
+        }
+
+        const inputStartPlayerName = document.getElementById('input-start-player-name') as HTMLInputElement | null;
+        if (inputStartPlayerName) {
+            inputStartPlayerName.placeholder = t.playerNamePlaceholder;
+        }
+
+        const closeGameOverBtn = document.getElementById('btn-close-game-over');
+        if (closeGameOverBtn) {
+            closeGameOverBtn.setAttribute('title', t.close);
         }
 
         const inputPlayerName = document.getElementById('input-player-name') as HTMLInputElement | null;
