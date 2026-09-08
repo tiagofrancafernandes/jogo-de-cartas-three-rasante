@@ -16,9 +16,9 @@ export const SLOTS = {
     DISCARD_PILE: { x: 3.8, y: 0.06, z: 0.1, rotX: 0, rotY: 0, rotZ: 0 },
     KING_CEMETERY: { x: 3.8, y: 0.06, z: -3.1, rotX: 0, rotY: 0, rotZ: 0 },
     PLAYER_HAND: [
-        { x: -2.3, y: 0.1, z: 3.3, rotX: -0.26, rotY: 0.04, rotZ: 0 },
-        { x: 0, y: 0.1, z: 3.3, rotX: -0.26, rotY: 0, rotZ: 0 },
-        { x: 2.3, y: 0.1, z: 3.3, rotX: -0.26, rotY: -0.04, rotZ: 0 },
+        { x: -2.3, y: 0.08, z: 3.3, rotX: 0, rotY: 0, rotZ: 0 },
+        { x: 0, y: 0.08, z: 3.3, rotX: 0, rotY: 0, rotZ: 0 },
+        { x: 2.3, y: 0.08, z: 3.3, rotX: 0, rotY: 0, rotZ: 0 },
     ],
     CPU_HAND: [
         { x: -2.3, y: 0.08, z: -3.1, rotX: Math.PI, rotY: 0, rotZ: 0 },
@@ -500,6 +500,12 @@ export class SceneManager {
             ease: 'power2.out',
             overwrite: 'auto',
         });
+        gsap.to(firstMesh.rotation, {
+            x: 0.12,
+            duration: 0.25,
+            ease: 'power2.out',
+            overwrite: 'auto',
+        });
     }
 
     private resetHoverState(): void {
@@ -535,6 +541,12 @@ export class SceneManager {
                 gsap.to(meshToReset.position, {
                     y: originalSlot.y,
                     z: originalSlot.z,
+                    duration: 0.25,
+                    ease: 'power2.out',
+                    overwrite: 'auto',
+                });
+                gsap.to(meshToReset.rotation, {
+                    x: originalSlot.rotX,
                     duration: 0.25,
                     ease: 'power2.out',
                     overwrite: 'auto',
