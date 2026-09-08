@@ -275,13 +275,12 @@ export class UIManager {
         }
 
         if (playAgainButton) {
+            playAgainButton.className =
+                'flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 text-white font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2 transition cursor-pointer shadow-lg shadow-emerald-950/50';
+
             if (!isPlayerWinner) {
                 playAgainButton.className =
                     'w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 text-white font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2 transition cursor-pointer shadow-lg shadow-emerald-950/50';
-            }
-            if (isPlayerWinner) {
-                playAgainButton.className =
-                    'flex-1 py-3 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-sm uppercase tracking-wider flex items-center justify-center gap-2 transition cursor-pointer border border-slate-600';
             }
         }
 
@@ -450,10 +449,10 @@ export class UIManager {
                 heroIcon.setAttribute('icon', 'fa7-solid:rotate-right');
             }
             if (heroLabel) {
-                heroLabel.textContent = isUnsavedWin ? t.playAgainNoSave : t.playAgain;
+                heroLabel.textContent = t.playAgain;
             }
             if (heroButton) {
-                heroButton.setAttribute('title', isUnsavedWin ? t.playAgainNoSave : t.playAgain);
+                heroButton.setAttribute('title', t.playAgain);
             }
         }
 
@@ -494,12 +493,16 @@ export class UIManager {
         modal.classList.remove('flex');
     }
 
-    public showHistoryModal(): void {
+    public showHistoryModal(initialTab?: 'recent' | 'best'): void {
         const modal = document.getElementById('modal-history');
         const playAgainBtn = document.getElementById('btn-history-play-again');
 
         if (!modal) {
             return;
+        }
+
+        if (initialTab) {
+            this.switchHistoryTab(initialTab);
         }
 
         this.hideStartModal();
@@ -811,12 +814,12 @@ export class UIManager {
             </div>
           </div>
 
-          <div class="flex items-center gap-3 mt-2">
-            <button id="btn-save-score" class="flex-1 py-3 px-4 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2 transition cursor-pointer shadow-lg shadow-amber-950/50">
+          <div class="flex flex-col sm:flex-row items-center gap-3 mt-2 w-full">
+            <button id="btn-save-score" class="w-full sm:flex-1 py-3 px-4 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2 transition cursor-pointer shadow-lg shadow-amber-950/50">
               <iconify-icon icon="fa7-solid:floppy-disk" class="w-5 h-5 text-xl"></iconify-icon>
               <span id="btn-save-label">${t.saveScore}</span>
             </button>
-            <button id="btn-play-again" class="flex-1 py-3 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-sm uppercase tracking-wider flex items-center justify-center gap-2 transition cursor-pointer border border-slate-600">
+            <button id="btn-play-again" class="w-full sm:flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 text-white font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2 transition cursor-pointer shadow-lg shadow-emerald-950/50">
               <iconify-icon icon="fa7-solid:rotate-right" class="w-5 h-5 text-xl"></iconify-icon>
               <span id="btn-play-again-label">${t.playAgain}</span>
             </button>
@@ -1077,10 +1080,9 @@ export class UIManager {
         if (playAgainButton) {
             playAgainButton.addEventListener('click', () => {
                 const gameOverNameInput = document.getElementById('input-player-name') as HTMLInputElement | null;
-                if (gameOverNameInput && gameOverNameInput.value.trim().length > 0) {
-                    this.scoreHistory.setLastPlayerName(gameOverNameInput.value.trim());
-                }
+                const rawName = gameOverNameInput ? gameOverNameInput.value : '';
 
+                this.saveCurrentMatchIfEligible(rawName);
                 this.hasCompletedMatch = false;
                 this.hideGameOverModal(true);
                 this.handlers.onNewGame();
@@ -1151,6 +1153,7 @@ export class UIManager {
         const historyPlayAgainButton = document.getElementById('btn-history-play-again');
         if (historyPlayAgainButton) {
             historyPlayAgainButton.addEventListener('click', () => {
+                this.saveCurrentMatchIfEligible();
                 this.hasCompletedMatch = false;
                 this.hideHistoryModal(true);
                 this.handlers.onNewGame();
@@ -1310,10 +1313,9 @@ export class UIManager {
         if (startHeroButton) {
             startHeroButton.addEventListener('click', () => {
                 const startNameInput = document.getElementById('input-start-player-name') as HTMLInputElement | null;
-                if (startNameInput && startNameInput.value.trim().length > 0) {
-                    this.scoreHistory.setLastPlayerName(startNameInput.value.trim());
-                }
+                const rawName = startNameInput ? startNameInput.value : '';
 
+                this.saveCurrentMatchIfEligible(rawName);
                 this.hasCompletedMatch = false;
                 this.hideStartModal();
                 this.handlers.onNewGame();
@@ -1337,7 +1339,7 @@ export class UIManager {
         });
     }
 
-    private handleSaveScore(): void {
+    private saveCurrentMatchIfEligible(customPlayerName?: string): void {
         if (!this.lastMatchData) {
             return;
         }
@@ -1346,9 +1348,14 @@ export class UIManager {
             return;
         }
 
-        const nameInput = document.getElementById('input-player-name') as HTMLInputElement | null;
-        const rawName = nameInput ? nameInput.value : '';
-        const playerName = rawName.trim().length > 0 ? rawName.trim() : this.scoreHistory.getLastPlayerName();
+        if (this.hasSavedCurrentMatch) {
+            return;
+        }
+
+        const trimmedName = customPlayerName ? customPlayerName.trim() : '';
+        const playerName = trimmedName.length > 0 ? trimmedName : this.scoreHistory.getLastPlayerName();
+
+        this.scoreHistory.setLastPlayerName(playerName);
 
         const record: MatchRecord = {
             id: `match_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
@@ -1362,6 +1369,13 @@ export class UIManager {
 
         this.scoreHistory.recordMatch(record);
         this.hasSavedCurrentMatch = true;
+    }
+
+    private handleSaveScore(): void {
+        const nameInput = document.getElementById('input-player-name') as HTMLInputElement | null;
+        const rawName = nameInput ? nameInput.value : '';
+
+        this.saveCurrentMatchIfEligible(rawName);
 
         const saveButton = document.getElementById('btn-save-score') as HTMLButtonElement | null;
 
@@ -1376,35 +1390,15 @@ export class UIManager {
         // Auto open history after 450ms to showcase saved score
         setTimeout(() => {
             this.hideGameOverModal(false, true);
-            this.showHistoryModal();
+            this.showHistoryModal('best');
         }, 450);
     }
 
     private handleSaveScoreFromStartModal(): void {
-        if (!this.lastMatchData) {
-            return;
-        }
-
-        if (this.lastMatchData.outcome !== 'PLAYER_WON') {
-            return;
-        }
-
         const startNameInput = document.getElementById('input-start-player-name') as HTMLInputElement | null;
         const rawName = startNameInput ? startNameInput.value : '';
-        const playerName = rawName.trim().length > 0 ? rawName.trim() : this.scoreHistory.getLastPlayerName();
 
-        const record: MatchRecord = {
-            id: `match_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
-            playerName,
-            playerScore: this.lastMatchData.playerScore,
-            cpuScore: this.lastMatchData.cpuScore,
-            outcome: this.lastMatchData.outcome,
-            reason: this.lastMatchData.reason,
-            timestamp: Date.now(),
-        };
-
-        this.scoreHistory.recordMatch(record);
-        this.hasSavedCurrentMatch = true;
+        this.saveCurrentMatchIfEligible(rawName);
 
         const saveButton = document.getElementById('btn-start-save-score') as HTMLButtonElement | null;
         if (saveButton) {
@@ -1419,6 +1413,11 @@ export class UIManager {
         if (heroLabel) {
             heroLabel.textContent = i18n.t().playAgain;
         }
+
+        setTimeout(() => {
+            this.hideStartModal();
+            this.showHistoryModal('best');
+        }, 450);
     }
 
     private switchHistoryTab(tab: 'recent' | 'best'): void {
@@ -1714,11 +1713,8 @@ export class UIManager {
         }
 
         if (labelStartHero) {
-            const isUnsavedWin =
-                isAfterCompletedMatch && this.lastMatchData?.outcome === 'PLAYER_WON' && !this.hasSavedCurrentMatch;
-
             if (isAfterCompletedMatch) {
-                labelStartHero.textContent = isUnsavedWin ? t.playAgainNoSave : t.playAgain;
+                labelStartHero.textContent = t.playAgain;
             }
             if (!isAfterCompletedMatch) {
                 labelStartHero.textContent = t.startModalButton;
