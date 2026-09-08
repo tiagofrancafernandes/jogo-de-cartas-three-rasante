@@ -1,6 +1,7 @@
 import { ScoreHistory } from '../core/ScoreHistory';
 import { MatchRecord, RoundOutcome } from '../core/types';
 import { i18n } from '../i18n';
+import { translations, Translations } from '../i18n/translations';
 
 export interface UIActionHandlers {
     onDrawCard: () => void;
@@ -16,6 +17,7 @@ export class UIManager {
     private activeHistoryTab: 'recent' | 'best' = 'recent';
     private currentViewMode: '3D' | '2D' = '3D';
     private currentDistance: 'far' | 'normal' | 'near' = 'normal';
+    private lastStatusMessage: string = '';
     private lastMatchData: {
         outcome: RoundOutcome;
         reason: string;
@@ -37,6 +39,7 @@ export class UIManager {
     }
 
     public updateStatus(message: string, isCpuThinking: boolean = false): void {
+        this.lastStatusMessage = message;
         const statusTextElement = document.getElementById('ui-status-text');
 
         if (!statusTextElement) {
@@ -314,6 +317,7 @@ export class UIManager {
             return;
         }
 
+        this.renderRulesContent();
         modal.classList.remove('hidden');
         modal.classList.add('flex');
     }
@@ -352,7 +356,7 @@ export class UIManager {
           </div>
           <div>
             <h1 class="text-lg font-black tracking-wider text-amber-400 uppercase leading-none">${t.gameTitle}</h1>
-            <span class="text-xs text-slate-400 font-medium">${t.gameSubtitle}</span>
+            <span id="game-subtitle" class="text-xs text-slate-400 font-medium">${t.gameSubtitle}</span>
           </div>
         </div>
 
@@ -517,12 +521,12 @@ export class UIManager {
             <table class="w-full text-left text-xs sm:text-sm text-slate-300">
               <thead class="bg-slate-950 text-slate-400 uppercase tracking-wider text-[11px] sticky top-0">
                 <tr>
-                  <th class="p-3 text-center">${t.colRank}</th>
-                  <th class="p-3">${t.colPlayer}</th>
-                  <th class="p-3 text-center">${t.colScore}</th>
-                  <th class="p-3 text-center">${t.colCpu}</th>
-                  <th class="p-3 text-center">${t.colOutcome}</th>
-                  <th class="p-3 text-right">${t.colDate}</th>
+                  <th id="th-rank" class="p-3 text-center">${t.colRank}</th>
+                  <th id="th-player" class="p-3">${t.colPlayer}</th>
+                  <th id="th-score" class="p-3 text-center">${t.colScore}</th>
+                  <th id="th-cpu" class="p-3 text-center">${t.colCpu}</th>
+                  <th id="th-outcome" class="p-3 text-center">${t.colOutcome}</th>
+                  <th id="th-date" class="p-3 text-right">${t.colDate}</th>
                 </tr>
               </thead>
               <tbody id="history-table-body" class="divide-y divide-slate-800/60 font-medium">
@@ -535,7 +539,7 @@ export class UIManager {
           <div class="flex items-center justify-between pt-2 border-t border-slate-800">
             <button id="btn-clear-history" class="text-xs text-rose-400 hover:text-rose-300 font-semibold flex items-center gap-1.5 transition cursor-pointer">
               <iconify-icon icon="fa7-solid:trash-can" class="w-3.5 h-3.5"></iconify-icon>
-              <span>${t.clearHistory}</span>
+              <span id="btn-clear-history-label">${t.clearHistory}</span>
             </button>
             <button id="btn-close-history-bottom" class="px-5 py-2 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold rounded-xl transition cursor-pointer">
               ${t.close}
@@ -550,53 +554,14 @@ export class UIManager {
           <div class="flex items-center justify-between border-b border-slate-800 pb-3">
             <div class="flex items-center gap-3">
               <iconify-icon icon="fa7-solid:book-open" class="w-6 h-6 text-emerald-400 text-2xl"></iconify-icon>
-              <h2 class="text-xl font-black text-white tracking-wide uppercase label-rules-title">${t.rulesModalTitle}</h2>
+              <h2 id="label-rules-title" class="text-xl font-black text-white tracking-wide uppercase label-rules-title">${t.rulesModalTitle}</h2>
             </div>
-            <button id="btn-close-rules" class="p-2 text-slate-400 hover:text-white transition cursor-pointer">
+            <button id="btn-close-rules" class="p-2 text-slate-400 hover:text-white transition cursor-pointer" title="${t.close}">
               <iconify-icon icon="fa7-solid:xmark" class="w-6 h-6 text-2xl"></iconify-icon>
             </button>
           </div>
 
-          <div class="overflow-y-auto flex-1 pr-2 flex flex-col gap-4 text-slate-300 text-sm leading-relaxed">
-            <section class="bg-slate-950/60 p-4 rounded-xl border border-slate-800/80">
-              <h3 class="font-bold text-emerald-400 mb-1 flex items-center gap-2">
-                <iconify-icon icon="fa7-solid:bullseye" class="w-4 h-4"></iconify-icon>
-                <span>${t.rulesObjectiveTitle}</span>
-              </h3>
-              <p class="text-xs text-slate-300">${t.rulesObjectiveText}</p>
-            </section>
-
-            <section class="bg-slate-950/60 p-4 rounded-xl border border-slate-800/80">
-              <h3 class="font-bold text-amber-400 mb-1 flex items-center gap-2">
-                <iconify-icon icon="fa7-solid:scale-balanced" class="w-4 h-4"></iconify-icon>
-                <span>${t.rulesValuesTitle}</span>
-              </h3>
-              <p class="text-xs text-slate-300 whitespace-pre-line">${t.rulesValuesText}</p>
-            </section>
-
-            <section class="bg-slate-950/60 p-4 rounded-xl border border-slate-800/80">
-              <h3 class="font-bold text-sky-400 mb-1 flex items-center gap-2">
-                <iconify-icon icon="fa7-solid:play" class="w-4 h-4"></iconify-icon>
-                <span>${t.rulesTurnTitle}</span>
-              </h3>
-              <p class="text-xs text-slate-300 whitespace-pre-line">${t.rulesTurnText}</p>
-            </section>
-
-            <section class="bg-slate-950/60 p-4 rounded-xl border border-slate-800/80">
-              <h3 class="font-bold text-rose-400 mb-1 flex items-center gap-2">
-                <iconify-icon icon="fa7-solid:crown" class="w-4 h-4"></iconify-icon>
-                <span>${t.rulesKingTitle}</span>
-              </h3>
-              <p class="text-xs text-slate-300">${t.rulesKingText}</p>
-            </section>
-
-            <section class="bg-slate-950/60 p-4 rounded-xl border border-slate-800/80">
-              <h3 class="font-bold text-yellow-400 mb-1 flex items-center gap-2">
-                <iconify-icon icon="fa7-solid:trophy" class="w-4 h-4"></iconify-icon>
-                <span>${t.rulesLandingTitle}</span>
-              </h3>
-              <p class="text-xs text-slate-300">${t.rulesLandingText}</p>
-            </section>
+          <div id="rules-content-container" class="overflow-y-auto flex-1 pr-2 flex flex-col gap-4 text-slate-300 text-sm leading-relaxed">
           </div>
 
           <div class="flex justify-end pt-2 border-t border-slate-800">
@@ -607,6 +572,8 @@ export class UIManager {
         </div>
       </div>
     `;
+
+        this.renderRulesContent();
     }
 
     private bindEvents(): void {
@@ -880,8 +847,130 @@ export class UIManager {
         tableBody.innerHTML = rowsHtml;
     }
 
+    private renderRulesContent(): void {
+        const container = document.getElementById('rules-content-container');
+        const titleElement = document.getElementById('label-rules-title');
+        const closeBottomBtn = document.getElementById('btn-close-rules-bottom');
+        const closeTopBtn = document.getElementById('btn-close-rules');
+        const t = i18n.t();
+
+        if (titleElement) {
+            titleElement.textContent = t.rulesModalTitle;
+        }
+
+        if (closeBottomBtn) {
+            closeBottomBtn.textContent = t.close;
+        }
+
+        if (closeTopBtn) {
+            closeTopBtn.setAttribute('title', t.close);
+        }
+
+        if (!container) {
+            return;
+        }
+
+        container.innerHTML = `
+            <section class="bg-slate-950/60 p-4 rounded-xl border border-slate-800/80">
+              <h3 class="font-bold text-emerald-400 mb-1 flex items-center gap-2">
+                <iconify-icon icon="fa7-solid:bullseye" class="w-4 h-4"></iconify-icon>
+                <span>${t.rulesObjectiveTitle}</span>
+              </h3>
+              <p class="text-xs text-slate-300">${t.rulesObjectiveText}</p>
+            </section>
+
+            <section class="bg-slate-950/60 p-4 rounded-xl border border-slate-800/80">
+              <h3 class="font-bold text-amber-400 mb-1 flex items-center gap-2">
+                <iconify-icon icon="fa7-solid:scale-balanced" class="w-4 h-4"></iconify-icon>
+                <span>${t.rulesValuesTitle}</span>
+              </h3>
+              <p class="text-xs text-slate-300 whitespace-pre-line">${t.rulesValuesText}</p>
+            </section>
+
+            <section class="bg-slate-950/60 p-4 rounded-xl border border-slate-800/80">
+              <h3 class="font-bold text-sky-400 mb-1 flex items-center gap-2">
+                <iconify-icon icon="fa7-solid:play" class="w-4 h-4"></iconify-icon>
+                <span>${t.rulesTurnTitle}</span>
+              </h3>
+              <p class="text-xs text-slate-300 whitespace-pre-line">${t.rulesTurnText}</p>
+            </section>
+
+            <section class="bg-slate-950/60 p-4 rounded-xl border border-slate-800/80">
+              <h3 class="font-bold text-rose-400 mb-1 flex items-center gap-2">
+                <iconify-icon icon="fa7-solid:crown" class="w-4 h-4"></iconify-icon>
+                <span>${t.rulesKingTitle}</span>
+              </h3>
+              <p class="text-xs text-slate-300">${t.rulesKingText}</p>
+            </section>
+
+            <section class="bg-slate-950/60 p-4 rounded-xl border border-slate-800/80">
+              <h3 class="font-bold text-yellow-400 mb-1 flex items-center gap-2">
+                <iconify-icon icon="fa7-solid:trophy" class="w-4 h-4"></iconify-icon>
+                <span>${t.rulesLandingTitle}</span>
+              </h3>
+              <p class="text-xs text-slate-300">${t.rulesLandingText}</p>
+            </section>
+        `;
+    }
+
+    private translateCurrentStatus(): void {
+        const statusTextElement = document.getElementById('ui-status-text');
+
+        if (!statusTextElement || !this.lastStatusMessage) {
+            return;
+        }
+
+        const pt = translations['pt-BR'];
+        const en = translations['en-US'];
+        const t = i18n.t();
+        const statusKeys: Array<keyof Translations> = [
+            'yourTurn',
+            'cpuThinking',
+            'cpuTurn',
+            'invalidMoveTitle',
+            'invalidMoveDesc',
+            'kingDetected',
+            'drawSuccess',
+            'drawPenalty',
+            'gameOverTitleWon',
+            'gameOverTitleLost',
+            'gameOverTitleDraw',
+            'landingSuccess',
+            'landingFailed',
+            'deckExhausted',
+        ];
+
+        for (const key of statusKeys) {
+            if (this.lastStatusMessage === pt[key] || this.lastStatusMessage === en[key]) {
+                statusTextElement.textContent = t[key];
+                this.lastStatusMessage = t[key];
+                return;
+            }
+        }
+    }
+
     private refreshTexts(): void {
         const t = i18n.t();
+
+        const subtitleElement = document.getElementById('game-subtitle');
+        if (subtitleElement) {
+            subtitleElement.textContent = t.gameSubtitle;
+        }
+
+        const openRulesBtn = document.getElementById('btn-open-rules');
+        if (openRulesBtn) {
+            openRulesBtn.setAttribute('title', t.rules);
+        }
+
+        const openHistoryBtn = document.getElementById('btn-open-history');
+        if (openHistoryBtn) {
+            openHistoryBtn.setAttribute('title', t.history);
+        }
+
+        const restartBtn = document.getElementById('btn-restart');
+        if (restartBtn) {
+            restartBtn.setAttribute('title', t.newGame);
+        }
 
         const drawLabel = document.getElementById('btn-draw-label');
         const pousarLabel = document.getElementById('btn-pousar-label');
@@ -914,6 +1003,57 @@ export class UIManager {
             playAgainLabel.textContent = t.playAgain;
         }
 
+        const inputPlayerName = document.getElementById('input-player-name') as HTMLInputElement | null;
+        if (inputPlayerName) {
+            inputPlayerName.placeholder = t.playerNamePlaceholder;
+        }
+
+        const playerPromptLabel = document.querySelector('.label-player-prompt');
+        if (playerPromptLabel) {
+            playerPromptLabel.textContent = t.playerNamePrompt;
+        }
+
+        const historyTitle = document.querySelector('.label-history-title');
+        if (historyTitle) {
+            historyTitle.textContent = t.historyModalTitle;
+        }
+
+        const thRank = document.getElementById('th-rank');
+        const thPlayer = document.getElementById('th-player');
+        const thScore = document.getElementById('th-score');
+        const thCpu = document.getElementById('th-cpu');
+        const thOutcome = document.getElementById('th-outcome');
+        const thDate = document.getElementById('th-date');
+
+        if (thRank) {
+            thRank.textContent = t.colRank;
+        }
+        if (thPlayer) {
+            thPlayer.textContent = t.colPlayer;
+        }
+        if (thScore) {
+            thScore.textContent = t.colScore;
+        }
+        if (thCpu) {
+            thCpu.textContent = t.colCpu;
+        }
+        if (thOutcome) {
+            thOutcome.textContent = t.colOutcome;
+        }
+        if (thDate) {
+            thDate.textContent = t.colDate;
+        }
+
+        const clearHistoryLabel = document.getElementById('btn-clear-history-label');
+        if (clearHistoryLabel) {
+            clearHistoryLabel.textContent = t.clearHistory;
+        }
+
+        const closeHistoryBottom = document.getElementById('btn-close-history-bottom');
+        if (closeHistoryBottom) {
+            closeHistoryBottom.textContent = t.close;
+        }
+
         const deckLabels = document.querySelectorAll('.label-deck-count');
         deckLabels.forEach((label) => {
             label.textContent = `${t.deckCount}:`;
@@ -939,7 +1079,9 @@ export class UIManager {
             label.textContent = `${t.cpuScore}:`;
         });
 
+        this.translateCurrentStatus();
         this.updateViewModeButton(this.currentViewMode);
         this.updateDistanceButton(this.currentDistance);
+        this.renderRulesContent();
     }
 }

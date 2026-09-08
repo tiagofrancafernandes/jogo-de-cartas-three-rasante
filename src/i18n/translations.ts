@@ -29,6 +29,7 @@ export interface Translations {
     landingFailed: string;
     deckExhausted: string;
     playerNamePrompt: string;
+    playerNamePlaceholder: string;
     saveScore: string;
     playAgain: string;
     historyModalTitle: string;
@@ -76,7 +77,7 @@ export const translations: Record<SupportedLocale, Translations> = {
         drawCard: 'Comprar Carta',
         pousar: 'Pousar!',
         history: 'Histórico',
-        rules: 'Regras',
+        rules: 'Instruções e Regras',
         newGame: 'Novo Jogo',
         sound: 'Efeitos',
         deckCount: 'Monte',
@@ -96,6 +97,7 @@ export const translations: Record<SupportedLocale, Translations> = {
         landingFailed: 'Caiu! Sua soma não foi estritamente menor que a da CPU.',
         deckExhausted: 'Fim do monte de compras! Avaliando mãos finais.',
         playerNamePrompt: 'Identifique-se para o histórico:',
+        playerNamePlaceholder: 'Nome do Jogador',
         saveScore: 'Salvar no Histórico',
         playAgain: 'Jogar Novamente',
         historyModalTitle: 'Histórico de Partidas',
@@ -113,16 +115,16 @@ export const translations: Record<SupportedLocale, Translations> = {
         statusLost: 'Perdeu',
         statusDraw: 'Empate',
         close: 'Fechar',
-        rulesModalTitle: 'Manual de Regras - Rasante',
+        rulesModalTitle: 'Manual de Instruções e Regras - Rasante',
         rulesObjectiveTitle: '1. Objetivo do Jogo',
         rulesObjectiveText:
             'Acumular a MENOR soma de pontos na mão (3 cartas). No início da sua vez, se acreditar ter menos pontos que o adversário, anuncie "Pousar!". Se sua soma for estritamente menor, você vence. Caso contrário, você Caiu e perde imediatamente.',
         rulesValuesTitle: '2. Valores e Hierarquia',
         rulesValuesText:
             'Ás (A) = 1 ponto. Cartas 2 a 10 = valor nominal. Valete (J), Dama (Q) e Rei (K) = 10 pontos cada.\nHierarquia de Força para cobrir: A < 2 < 3 < 4 < 5 < 6 < 7 < 8 < 9 < 10 < J < Q < K.',
-        rulesTurnTitle: '3. Dinâmica do Turno',
+        rulesTurnTitle: '3. Dinâmica do Turno (Instruções)',
         rulesTurnText:
-            'No seu turno, antes de jogar você pode "Pousar!". Senão, faça:\n• Ação 1 (Cobrir): Jogue uma carta da mão estritamente MAIOR que a da mesa e recolha a carta menor da mesa para sua mão.\n• Ação 2 (Comprar): Compre uma carta do monte. Se for MAIOR, substitui a mesa e a antiga vai pro descarte. Se for MENOR ou IGUAL, compra vai pro descarte, você recebe a carta da mesa e uma carta aleatória da sua mão vai para a mesa.',
+            'No seu turno, antes de jogar você pode "Pousar!". Senão, faça uma das ações:\n• Ação 1 (Cobrir): Jogue uma carta da mão estritamente MAIOR que a da mesa e recolha a carta menor da mesa para sua mão.\n• Ação 2 (Comprar): Compre uma carta do monte. Se for MAIOR, substitui a mesa e a antiga vai pro descarte. Se for MENOR ou IGUAL, compra vai pro descarte, você recebe a carta da mesa e uma carta aleatória da sua mão vai para a mesa.',
         rulesKingTitle: '4. Eliminação do Rei (K)',
         rulesKingText:
             'O Rei é o teto da hierarquia. Sempre que um Rei surge na mesa (por jogada ou compra), ele é IMEDIATAMENTE enviado para o Cemitério dos Reis e uma nova carta é aberta do monte para ocupar o centro.',
@@ -146,7 +148,7 @@ export const translations: Record<SupportedLocale, Translations> = {
         drawCard: 'Draw Card',
         pousar: 'Land!',
         history: 'History',
-        rules: 'Rules',
+        rules: 'Instructions & Rules',
         newGame: 'New Game',
         sound: 'Effects',
         deckCount: 'Draw Deck',
@@ -166,6 +168,7 @@ export const translations: Record<SupportedLocale, Translations> = {
         landingFailed: 'Crash! Your sum was not strictly lower than the CPU.',
         deckExhausted: 'Draw deck exhausted! Comparing final hand scores.',
         playerNamePrompt: 'Identify yourself for the records:',
+        playerNamePlaceholder: 'Player Name',
         saveScore: 'Save to History',
         playAgain: 'Play Again',
         historyModalTitle: 'Match History',
@@ -183,16 +186,16 @@ export const translations: Record<SupportedLocale, Translations> = {
         statusLost: 'Lost',
         statusDraw: 'Draw',
         close: 'Close',
-        rulesModalTitle: 'Official Rules Manual - Rasante',
+        rulesModalTitle: 'Official Instructions & Rules - Rasante',
         rulesObjectiveTitle: '1. Game Objective',
         rulesObjectiveText:
             'Accumulate the LOWEST sum of points in your 3-card hand. At the start of your turn, if you believe your sum is lower than the opponent, declare "Land!". If your sum is strictly lower, you win. Otherwise, you Crash and lose immediately.',
         rulesValuesTitle: '2. Values and Hierarchy',
         rulesValuesText:
             'Ace (A) = 1 point. Cards 2 to 10 = face value. Jack (J), Queen (Q), and King (K) = 10 points each.\nHierarchy for covering: A < 2 < 3 < 4 < 5 < 6 < 7 < 8 < 9 < 10 < J < Q < K.',
-        rulesTurnTitle: '3. Turn Dynamics',
+        rulesTurnTitle: '3. Turn Dynamics (Instructions)',
         rulesTurnText:
-            'On your turn, declare "Land!" before taking action, or choose:\n• Action 1 (Cover): Play a card from hand strictly GREATER than the center card and take the lower card into your hand.\n• Action 2 (Draw): Draw the top card. If GREATER, it replaces the center card and old goes to discard. If LOWER or EQUAL, drawn card is discarded, you receive the center card, and a random card from your hand goes to the center.',
+            'On your turn, declare "Land!" before taking action, or choose one of:\n• Action 1 (Cover): Play a card from hand strictly GREATER than the center card and take the lower card into your hand.\n• Action 2 (Draw): Draw the top card. If GREATER, it replaces the center card and old goes to discard. If LOWER or EQUAL, drawn card is discarded, you receive the center card, and a random card from your hand goes to the center.',
         rulesKingTitle: '4. King (K) Elimination',
         rulesKingText:
             'King is the ceiling of the hierarchy. Whenever a King enters the center slot (from hand or draw), it is IMMEDIATELY removed to the King Cemetery and a replacement card is drawn from the deck.',
