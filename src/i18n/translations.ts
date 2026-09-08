@@ -75,6 +75,10 @@ export interface Translations {
     confirmRestartMessage: string;
     confirmRestartYes: string;
     confirmRestartCancel: string;
+    confirmClearHistoryTitle: string;
+    confirmClearHistoryMessage: string;
+    confirmClearHistoryYes: string;
+    confirmClearHistoryCancel: string;
     zoomIn: string;
     zoomOut: string;
     zoomText: string;
@@ -166,6 +170,11 @@ export const translations: Record<SupportedLocale, Translations> = {
             'A partida atual está em andamento. Tem certeza de que deseja reiniciar? Todo o progresso desta rodada será perdido.',
         confirmRestartYes: 'Sim, Recomeçar',
         confirmRestartCancel: 'Continuar Jogando',
+        confirmClearHistoryTitle: 'Limpar Histórico?',
+        confirmClearHistoryMessage:
+            'Tem certeza de que deseja apagar todo o histórico de partidas e recordes? Esta ação não pode ser desfeita.',
+        confirmClearHistoryYes: 'Sim, Limpar Tudo',
+        confirmClearHistoryCancel: 'Cancelar',
         zoomIn: 'Aumentar texto (Zoom +)',
         zoomOut: 'Diminuir texto (Zoom -)',
         zoomText: 'Texto',
@@ -256,6 +265,11 @@ export const translations: Record<SupportedLocale, Translations> = {
             'A match is currently in progress. Are you sure you want to restart? All progress from this round will be lost.',
         confirmRestartYes: 'Yes, Restart',
         confirmRestartCancel: 'Keep Playing',
+        confirmClearHistoryTitle: 'Clear Match History?',
+        confirmClearHistoryMessage:
+            'Are you sure you want to delete all match records and best scores? This action cannot be undone.',
+        confirmClearHistoryYes: 'Yes, Clear All',
+        confirmClearHistoryCancel: 'Cancel',
         zoomIn: 'Increase text (Zoom +)',
         zoomOut: 'Decrease text (Zoom -)',
         zoomText: 'Text',

@@ -370,6 +370,28 @@ export class UIManager {
         modal.classList.remove('flex');
     }
 
+    public showConfirmClearHistoryModal(): void {
+        const modal = document.getElementById('modal-confirm-clear-history');
+
+        if (!modal) {
+            return;
+        }
+
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    }
+
+    public hideConfirmClearHistoryModal(): void {
+        const modal = document.getElementById('modal-confirm-clear-history');
+
+        if (!modal) {
+            return;
+        }
+
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
+
     public showStartModal(): void {
         const modal = document.getElementById('modal-start');
         const titleElement = document.getElementById('start-modal-title');
@@ -907,6 +929,35 @@ export class UIManager {
         </div>
       </div>
 
+      <!-- Confirm Clear History Modal -->
+      <div id="modal-confirm-clear-history" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md hidden items-center justify-center z-[60] p-4">
+        <div class="bg-slate-900 border border-slate-700 rounded-3xl p-6 max-w-md w-full shadow-2xl flex flex-col gap-4">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-rose-500/20 border border-rose-500/40 flex items-center justify-center text-rose-400">
+                <iconify-icon icon="fa7-solid:triangle-exclamation" class="w-5 h-5 text-xl"></iconify-icon>
+              </div>
+              <h2 id="confirm-clear-history-title" class="text-lg font-black text-white uppercase tracking-wider">${t.confirmClearHistoryTitle}</h2>
+            </div>
+            <button id="btn-close-confirm-clear-history" class="p-2 text-slate-400 hover:text-white transition cursor-pointer" title="${t.close}">
+              <iconify-icon icon="fa7-solid:xmark" class="w-6 h-6 text-2xl"></iconify-icon>
+            </button>
+          </div>
+
+          <p id="confirm-clear-history-message" class="text-xs sm:text-sm text-slate-300 leading-relaxed">${t.confirmClearHistoryMessage}</p>
+
+          <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
+            <button id="btn-cancel-clear-history" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition cursor-pointer">
+              <span id="btn-cancel-clear-history-label">${t.confirmClearHistoryCancel}</span>
+            </button>
+            <button id="btn-confirm-clear-history" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-rose-600 to-red-700 hover:from-rose-500 hover:to-red-600 text-white text-xs font-black uppercase tracking-wider transition cursor-pointer flex items-center gap-2 shadow-lg shadow-rose-950/50">
+              <iconify-icon icon="fa7-solid:trash-can" class="w-3.5 h-3.5"></iconify-icon>
+              <span id="btn-confirm-clear-history-label">${t.confirmClearHistoryYes}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
       <!-- Welcome / Start Game Modal -->
       <div id="modal-start" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md hidden items-center justify-center z-40 p-4">
         <div class="bg-slate-900/95 border border-slate-700/80 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl flex flex-col items-center text-center gap-5">
@@ -1085,8 +1136,40 @@ export class UIManager {
 
         if (clearHistoryButton) {
             clearHistoryButton.addEventListener('click', () => {
+                this.showConfirmClearHistoryModal();
+            });
+        }
+
+        const confirmClearHistoryButton = document.getElementById('btn-confirm-clear-history');
+        const cancelClearHistoryButton = document.getElementById('btn-cancel-clear-history');
+        const closeConfirmClearHistoryButton = document.getElementById('btn-close-confirm-clear-history');
+        const confirmClearHistoryModal = document.getElementById('modal-confirm-clear-history');
+
+        if (confirmClearHistoryButton) {
+            confirmClearHistoryButton.addEventListener('click', () => {
                 this.scoreHistory.clear();
                 this.renderHistoryTable();
+                this.hideConfirmClearHistoryModal();
+            });
+        }
+
+        if (cancelClearHistoryButton) {
+            cancelClearHistoryButton.addEventListener('click', () => {
+                this.hideConfirmClearHistoryModal();
+            });
+        }
+
+        if (closeConfirmClearHistoryButton) {
+            closeConfirmClearHistoryButton.addEventListener('click', () => {
+                this.hideConfirmClearHistoryModal();
+            });
+        }
+
+        if (confirmClearHistoryModal) {
+            confirmClearHistoryModal.addEventListener('click', (event) => {
+                if (event.target === confirmClearHistoryModal) {
+                    this.hideConfirmClearHistoryModal();
+                }
             });
         }
 
@@ -1213,6 +1296,7 @@ export class UIManager {
 
         window.addEventListener('keydown', (event) => {
             if (event.key === 'Escape') {
+                this.hideConfirmClearHistoryModal();
                 this.hideConfirmRestartModal();
                 this.hideRulesModal();
                 this.hideHistoryModal(false);
@@ -1550,6 +1634,32 @@ export class UIManager {
 
         if (closeConfirmRestartBtn) {
             closeConfirmRestartBtn.setAttribute('title', t.close);
+        }
+
+        const confirmClearTitle = document.getElementById('confirm-clear-history-title');
+        const confirmClearMessage = document.getElementById('confirm-clear-history-message');
+        const cancelClearLabel = document.getElementById('btn-cancel-clear-history-label');
+        const confirmClearLabel = document.getElementById('btn-confirm-clear-history-label');
+        const closeConfirmClearBtn = document.getElementById('btn-close-confirm-clear-history');
+
+        if (confirmClearTitle) {
+            confirmClearTitle.textContent = t.confirmClearHistoryTitle;
+        }
+
+        if (confirmClearMessage) {
+            confirmClearMessage.textContent = t.confirmClearHistoryMessage;
+        }
+
+        if (cancelClearLabel) {
+            cancelClearLabel.textContent = t.confirmClearHistoryCancel;
+        }
+
+        if (confirmClearLabel) {
+            confirmClearLabel.textContent = t.confirmClearHistoryYes;
+        }
+
+        if (closeConfirmClearBtn) {
+            closeConfirmClearBtn.setAttribute('title', t.close);
         }
 
         const startModalTitle = document.getElementById('start-modal-title');
