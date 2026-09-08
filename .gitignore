@@ -18,3 +18,4 @@ dist-ssr
 *.del.*
 _ide_helper*
 *.localonly.
+.vercel
