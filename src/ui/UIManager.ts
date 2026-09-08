@@ -6,12 +6,16 @@ export interface UIActionHandlers {
     onDrawCard: () => void;
     onPousar: () => void;
     onNewGame: () => void;
+    onToggleViewMode?: () => void;
+    onCycleDistance?: () => void;
 }
 
 export class UIManager {
     private scoreHistory: ScoreHistory;
     private handlers: UIActionHandlers;
     private activeHistoryTab: 'recent' | 'best' = 'recent';
+    private currentViewMode: '3D' | '2D' = '3D';
+    private currentDistance: 'far' | 'normal' | 'near' = 'normal';
     private lastMatchData: {
         outcome: RoundOutcome;
         reason: string;
@@ -107,6 +111,61 @@ export class UIManager {
             pousarButton.disabled = !enabled;
             pousarButton.classList.toggle('opacity-50', !enabled);
             pousarButton.classList.toggle('cursor-not-allowed', !enabled);
+        }
+    }
+
+    public updateViewModeButton(mode: '3D' | '2D'): void {
+        this.currentViewMode = mode;
+        const labelElement = document.getElementById('label-view-mode');
+        const iconElement = document.getElementById('icon-view-mode');
+        const buttonElement = document.getElementById('btn-toggle-view');
+
+        if (labelElement) {
+            labelElement.textContent = mode;
+        }
+
+        if (iconElement) {
+            iconElement.setAttribute('icon', mode === '3D' ? 'fa7-solid:cube' : 'fa7-solid:clone');
+        }
+
+        if (buttonElement) {
+            buttonElement.setAttribute('title', i18n.t().viewMode);
+        }
+    }
+
+    public updateDistanceButton(distance: 'far' | 'normal' | 'near'): void {
+        this.currentDistance = distance;
+        const labelElement = document.getElementById('label-dist');
+        const iconElement = document.getElementById('icon-dist');
+        const buttonElement = document.getElementById('btn-toggle-dist');
+        const t = i18n.t();
+
+        if (labelElement) {
+            if (distance === 'far') {
+                labelElement.textContent = t.distFar;
+            }
+            if (distance === 'normal') {
+                labelElement.textContent = t.distNormal;
+            }
+            if (distance === 'near') {
+                labelElement.textContent = t.distNear;
+            }
+        }
+
+        if (iconElement) {
+            if (distance === 'far') {
+                iconElement.setAttribute('icon', 'fa7-solid:magnifying-glass-minus');
+            }
+            if (distance === 'normal') {
+                iconElement.setAttribute('icon', 'fa7-solid:magnifying-glass');
+            }
+            if (distance === 'near') {
+                iconElement.setAttribute('icon', 'fa7-solid:magnifying-glass-plus');
+            }
+        }
+
+        if (buttonElement) {
+            buttonElement.setAttribute('title', t.distance);
         }
     }
 
@@ -303,11 +362,23 @@ export class UIManager {
           <span id="ui-status-text" class="text-sm font-semibold text-slate-100">${t.yourTurn}</span>
         </div>
 
-        <!-- Quick Utilities (Language, Rules, History, Reset) -->
+        <!-- Quick Utilities (View Mode, Distance, Language, Rules, History, Reset) -->
         <div class="pointer-events-auto flex items-center gap-2 bg-slate-950/80 backdrop-blur-md p-1.5 rounded-2xl border border-slate-700/50 shadow-2xl">
+          <!-- View Mode Toggle (3D / 2D) -->
+          <button id="btn-toggle-view" class="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer" title="${t.viewMode}">
+            <iconify-icon id="icon-view-mode" icon="fa7-solid:cube" class="w-3.5 h-3.5 text-sky-400"></iconify-icon>
+            <span id="label-view-mode">3D</span>
+          </button>
+
+          <!-- Camera Distance Toggle (Far / Normal / Near) -->
+          <button id="btn-toggle-dist" class="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer" title="${t.distance}">
+            <iconify-icon id="icon-dist" icon="fa7-solid:magnifying-glass" class="w-3.5 h-3.5 text-amber-400"></iconify-icon>
+            <span id="label-dist">${t.distNormal}</span>
+          </button>
+
           <!-- Language Toggle -->
-          <button id="btn-toggle-lang" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer">
-            <iconify-icon icon="fa7-solid:globe" class="w-4 h-4 text-slate-400"></iconify-icon>
+          <button id="btn-toggle-lang" class="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer">
+            <iconify-icon icon="fa7-solid:globe" class="w-3.5 h-3.5 text-slate-400"></iconify-icon>
             <span id="label-lang">${currentLocale === 'pt-BR' ? 'PT' : 'EN'}</span>
           </button>
 
@@ -544,6 +615,8 @@ export class UIManager {
         const restartButton = document.getElementById('btn-restart');
         const playAgainButton = document.getElementById('btn-play-again');
         const toggleLangButton = document.getElementById('btn-toggle-lang');
+        const toggleViewButton = document.getElementById('btn-toggle-view');
+        const toggleDistButton = document.getElementById('btn-toggle-dist');
         const openHistoryButton = document.getElementById('btn-open-history');
         const closeHistoryButton = document.getElementById('btn-close-history');
         const closeHistoryBottomButton = document.getElementById('btn-close-history-bottom');
@@ -577,6 +650,22 @@ export class UIManager {
             playAgainButton.addEventListener('click', () => {
                 this.hideGameOverModal();
                 this.handlers.onNewGame();
+            });
+        }
+
+        if (toggleViewButton) {
+            toggleViewButton.addEventListener('click', () => {
+                if (this.handlers.onToggleViewMode) {
+                    this.handlers.onToggleViewMode();
+                }
+            });
+        }
+
+        if (toggleDistButton) {
+            toggleDistButton.addEventListener('click', () => {
+                if (this.handlers.onCycleDistance) {
+                    this.handlers.onCycleDistance();
+                }
             });
         }
 
@@ -849,5 +938,8 @@ export class UIManager {
         cpuScoreLabels.forEach((label) => {
             label.textContent = `${t.cpuScore}:`;
         });
+
+        this.updateViewModeButton(this.currentViewMode);
+        this.updateDistanceButton(this.currentDistance);
     }
 }

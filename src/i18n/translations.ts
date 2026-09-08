@@ -57,6 +57,13 @@ export interface Translations {
     rulesKingText: string;
     rulesLandingTitle: string;
     rulesLandingText: string;
+    viewMode: string;
+    view3D: string;
+    view2D: string;
+    distance: string;
+    distFar: string;
+    distNormal: string;
+    distNear: string;
 }
 
 export const translations: Record<SupportedLocale, Translations> = {
@@ -122,6 +129,13 @@ export const translations: Record<SupportedLocale, Translations> = {
         rulesLandingTitle: '5. Pontuação e Histórico',
         rulesLandingText:
             'Quanto MENOR o número acumulado, melhor é a sua pontuação. O histórico guarda as 10 melhores pontuações e as 10 últimas partidas disputadas.',
+        viewMode: 'Visão',
+        view3D: '3D',
+        view2D: '2D',
+        distance: 'Distância',
+        distFar: 'Menor',
+        distNormal: 'Normal',
+        distNear: 'Perto',
     },
     'en-US': {
         gameTitle: 'Rasante',
@@ -185,5 +199,12 @@ export const translations: Record<SupportedLocale, Translations> = {
         rulesLandingTitle: '5. Scoring and History',
         rulesLandingText:
             'The LOWER your accumulated points, the better your score. History tracks the 10 best scores and 10 most recent matches.',
+        viewMode: 'View',
+        view3D: '3D',
+        view2D: '2D',
+        distance: 'Distance',
+        distFar: 'Far',
+        distNormal: 'Normal',
+        distNear: 'Near',
     },
 };

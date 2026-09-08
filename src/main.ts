@@ -37,10 +37,20 @@ class GameApp {
             onNewGame: () => {
                 this.startNewGame();
             },
+            onToggleViewMode: () => {
+                this.handleToggleViewMode();
+            },
+            onCycleDistance: () => {
+                this.handleCycleDistance();
+            },
         });
 
         const container = document.getElementById('canvas-container') as HTMLElement;
         this.sceneManager = new SceneManager(container);
+
+        this.uiManager.updateViewModeButton(this.sceneManager.getViewMode());
+        this.uiManager.updateDistanceButton(this.sceneManager.getCameraDistance());
+        this.animationQueue.setViewMode(this.sceneManager.getViewMode());
 
         this.sceneManager.onPlayerCardClick((clickedIndex) => {
             this.handlePlayerCardClick(clickedIndex);
@@ -49,6 +59,17 @@ class GameApp {
         this.rulesEngine = new RulesEngine();
         this.startRenderLoop();
         this.startNewGame();
+    }
+
+    private handleToggleViewMode(): void {
+        const nextMode = this.sceneManager.toggleViewMode();
+        this.animationQueue.setViewMode(nextMode);
+        this.uiManager.updateViewModeButton(nextMode);
+    }
+
+    private handleCycleDistance(): void {
+        const nextDist = this.sceneManager.cycleCameraDistance();
+        this.uiManager.updateDistanceButton(nextDist);
     }
 
     public async startNewGame(): Promise<void> {

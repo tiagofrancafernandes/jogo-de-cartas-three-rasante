@@ -8,6 +8,7 @@ const ANIM_DURATION_SLOW = 0.7;
 
 export class AnimationQueue {
     private isBusyFlag: boolean = false;
+    private viewMode: '3D' | '2D' = '3D';
 
     public isBusy(): boolean {
         return this.isBusyFlag;
@@ -15,6 +16,19 @@ export class AnimationQueue {
 
     public setBusy(busy: boolean): void {
         this.isBusyFlag = busy;
+    }
+
+    public setViewMode(mode: '3D' | '2D'): void {
+        this.viewMode = mode;
+    }
+
+    private getPlayerHandRotation(index: number): { rotX: number; rotY: number; rotZ: number } {
+        if (this.viewMode === '2D') {
+            return { rotX: 0, rotY: 0, rotZ: 0 };
+        }
+
+        const slot = SLOTS.PLAYER_HAND[index];
+        return { rotX: slot.rotX, rotY: slot.rotY, rotZ: slot.rotZ };
     }
 
     public async animateInitialDeal(
@@ -42,6 +56,7 @@ export class AnimationQueue {
         for (let index = 0; index < 3; index++) {
             const playerMesh = playerMeshes[index];
             const playerSlot = SLOTS.PLAYER_HAND[index];
+            const playerRot = this.getPlayerHandRotation(index);
 
             timeline.to(
                 playerMesh.position,
@@ -58,9 +73,9 @@ export class AnimationQueue {
             timeline.to(
                 playerMesh.rotation,
                 {
-                    x: playerSlot.rotX,
-                    y: playerSlot.rotY,
-                    z: playerSlot.rotZ,
+                    x: playerRot.rotX,
+                    y: playerRot.rotY,
+                    z: playerRot.rotZ,
                     duration: ANIM_DURATION_FAST,
                     ease: 'power2.out',
                 },
@@ -165,6 +180,11 @@ export class AnimationQueue {
         );
 
         // Move collected card from center to hand
+        const targetHandRot =
+            actor === 'PLAYER'
+                ? this.getPlayerHandRotation(handIndex)
+                : { rotX: targetHandSlot.rotX, rotY: targetHandSlot.rotY, rotZ: targetHandSlot.rotZ };
+
         timeline.to(
             collectedMesh.position,
             {
@@ -180,9 +200,9 @@ export class AnimationQueue {
         timeline.to(
             collectedMesh.rotation,
             {
-                x: targetHandSlot.rotX,
-                y: targetHandSlot.rotY,
-                z: targetHandSlot.rotZ,
+                x: targetHandRot.rotX,
+                y: targetHandRot.rotY,
+                z: targetHandRot.rotZ,
                 duration: ANIM_DURATION_FAST,
                 ease: 'power2.out',
             },
@@ -316,6 +336,11 @@ export class AnimationQueue {
         );
 
         // Forced active card goes to player's hand
+        const targetHandRot =
+            actor === 'PLAYER'
+                ? this.getPlayerHandRotation(handIndex)
+                : { rotX: targetHandSlot.rotX, rotY: targetHandSlot.rotY, rotZ: targetHandSlot.rotZ };
+
         timeline.to(
             forcedMesh.position,
             {
@@ -331,9 +356,9 @@ export class AnimationQueue {
         timeline.to(
             forcedMesh.rotation,
             {
-                x: targetHandSlot.rotX,
-                y: targetHandSlot.rotY,
-                z: targetHandSlot.rotZ,
+                x: targetHandRot.rotX,
+                y: targetHandRot.rotY,
+                z: targetHandRot.rotZ,
                 duration: ANIM_DURATION_FAST,
                 ease: 'power2.out',
             },

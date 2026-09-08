@@ -28,6 +28,55 @@ export const SLOTS = {
     DRAW_PREVIEW: { x: -1.6, y: 1.1, z: 0.1, rotX: 0, rotY: 0, rotZ: 0 },
 };
 
+export type ViewMode = '3D' | '2D';
+export type CameraDistance = 'far' | 'normal' | 'near';
+
+const STORAGE_KEY_VIEW_MODE = 'rasante_view_mode';
+const STORAGE_KEY_DISTANCE = 'rasante_camera_distance';
+
+interface CameraPreset {
+    position: { x: number; y: number; z: number };
+    target: { x: number; y: number; z: number };
+    up: { x: number; y: number; z: number };
+}
+
+const CAMERA_PRESETS: Record<ViewMode, Record<CameraDistance, CameraPreset>> = {
+    '3D': {
+        normal: {
+            position: { x: 0, y: 9.6, z: 7.6 },
+            target: { x: 0, y: -0.25, z: 0.4 },
+            up: { x: 0, y: 1, z: 0 },
+        },
+        near: {
+            position: { x: 0, y: 8.0, z: 6.2 },
+            target: { x: 0, y: -0.25, z: 0.4 },
+            up: { x: 0, y: 1, z: 0 },
+        },
+        far: {
+            position: { x: 0, y: 11.6, z: 9.4 },
+            target: { x: 0, y: -0.25, z: 0.4 },
+            up: { x: 0, y: 1, z: 0 },
+        },
+    },
+    '2D': {
+        normal: {
+            position: { x: 0, y: 11.8, z: 0.2 },
+            target: { x: 0, y: 0, z: 0.2 },
+            up: { x: 0, y: 0, z: -1 },
+        },
+        near: {
+            position: { x: 0, y: 9.6, z: 0.2 },
+            target: { x: 0, y: 0, z: 0.2 },
+            up: { x: 0, y: 0, z: -1 },
+        },
+        far: {
+            position: { x: 0, y: 14.5, z: 0.2 },
+            target: { x: 0, y: 0, z: 0.2 },
+            up: { x: 0, y: 0, z: -1 },
+        },
+    },
+};
+
 export class SceneManager {
     private container: HTMLElement;
     private scene: THREE.Scene;
@@ -39,6 +88,9 @@ export class SceneManager {
     private hoveredMesh: THREE.Mesh | null = null;
     private isInteractive: boolean = true;
     private onPlayerCardClickCallback?: (cardIndex: number) => void;
+    private viewMode: ViewMode = '3D';
+    private cameraDistance: CameraDistance = 'normal';
+    private currentLookAt: THREE.Vector3 = new THREE.Vector3(0, -0.25, 0.4);
 
     public constructor(container: HTMLElement) {
         if (!container) {
@@ -54,8 +106,24 @@ export class SceneManager {
         const height = this.container.clientHeight || window.innerHeight;
 
         this.camera = new THREE.PerspectiveCamera(40, width / height, 0.1, 1000);
-        this.camera.position.set(0, 9.6, 7.6);
-        this.camera.lookAt(0, -0.25, 0.4);
+
+        const savedViewMode = localStorage.getItem(STORAGE_KEY_VIEW_MODE);
+        if (savedViewMode === '2D' || savedViewMode === '3D') {
+            this.viewMode = savedViewMode;
+        }
+
+        const savedDistance = localStorage.getItem(STORAGE_KEY_DISTANCE);
+        if (savedDistance === 'far' || savedDistance === 'menor') {
+            this.cameraDistance = 'far';
+        }
+        if (savedDistance === 'near' || savedDistance === 'perto') {
+            this.cameraDistance = 'near';
+        }
+        if (savedDistance === 'normal') {
+            this.cameraDistance = 'normal';
+        }
+
+        this.applyCameraPreset(false);
 
         this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
         this.renderer.setSize(width, height);
@@ -79,8 +147,149 @@ export class SceneManager {
         return this.camera;
     }
 
+    public getViewMode(): ViewMode {
+        return this.viewMode;
+    }
+
+    public getCameraDistance(): CameraDistance {
+        return this.cameraDistance;
+    }
+
+    public setViewMode(mode: ViewMode, animate: boolean = true): void {
+        if (this.viewMode === mode && animate) {
+            return;
+        }
+
+        this.resetHoverState();
+        this.viewMode = mode;
+        localStorage.setItem(STORAGE_KEY_VIEW_MODE, mode);
+
+        this.applyCameraPreset(animate);
+        this.updatePlayerCardRotations(animate);
+    }
+
+    public toggleViewMode(): ViewMode {
+        const nextMode: ViewMode = this.viewMode === '3D' ? '2D' : '3D';
+        this.setViewMode(nextMode, true);
+        return nextMode;
+    }
+
+    public setCameraDistance(distance: CameraDistance, animate: boolean = true): void {
+        if (this.cameraDistance === distance && animate) {
+            return;
+        }
+
+        this.cameraDistance = distance;
+        localStorage.setItem(STORAGE_KEY_DISTANCE, distance);
+
+        this.applyCameraPreset(animate);
+    }
+
+    public cycleCameraDistance(): CameraDistance {
+        if (this.cameraDistance === 'normal') {
+            this.setCameraDistance('near', true);
+            return this.cameraDistance;
+        }
+
+        if (this.cameraDistance === 'near') {
+            this.setCameraDistance('far', true);
+            return this.cameraDistance;
+        }
+
+        this.setCameraDistance('normal', true);
+        return this.cameraDistance;
+    }
+
+    public applyCameraPreset(animate: boolean = true): void {
+        const preset = CAMERA_PRESETS[this.viewMode][this.cameraDistance];
+
+        if (!animate) {
+            this.camera.position.set(preset.position.x, preset.position.y, preset.position.z);
+            this.camera.up.set(preset.up.x, preset.up.y, preset.up.z);
+            this.camera.lookAt(preset.target.x, preset.target.y, preset.target.z);
+            this.currentLookAt.set(preset.target.x, preset.target.y, preset.target.z);
+            return;
+        }
+
+        const animState = {
+            posX: this.camera.position.x,
+            posY: this.camera.position.y,
+            posZ: this.camera.position.z,
+            upX: this.camera.up.x,
+            upY: this.camera.up.y,
+            upZ: this.camera.up.z,
+            targetX: this.currentLookAt.x,
+            targetY: this.currentLookAt.y,
+            targetZ: this.currentLookAt.z,
+        };
+
+        gsap.to(animState, {
+            posX: preset.position.x,
+            posY: preset.position.y,
+            posZ: preset.position.z,
+            upX: preset.up.x,
+            upY: preset.up.y,
+            upZ: preset.up.z,
+            targetX: preset.target.x,
+            targetY: preset.target.y,
+            targetZ: preset.target.z,
+            duration: 0.65,
+            ease: 'power2.inOut',
+            overwrite: 'auto',
+            onUpdate: () => {
+                this.camera.position.set(animState.posX, animState.posY, animState.posZ);
+                this.camera.up.set(animState.upX, animState.upY, animState.upZ);
+                this.camera.lookAt(animState.targetX, animState.targetY, animState.targetZ);
+            },
+            onComplete: () => {
+                this.currentLookAt.set(preset.target.x, preset.target.y, preset.target.z);
+            },
+        });
+    }
+
+    public updatePlayerCardRotations(animate: boolean = true): void {
+        const is2DMode = this.viewMode === '2D';
+
+        for (let index = 0; index < this.playerCardMeshes.length; index++) {
+            const mesh = this.playerCardMeshes[index];
+            const baseSlot = SLOTS.PLAYER_HAND[index];
+
+            if (!mesh || !baseSlot) {
+                continue;
+            }
+
+            const targetRotX = is2DMode ? 0 : baseSlot.rotX;
+            const targetRotY = is2DMode ? 0 : baseSlot.rotY;
+            const targetRotZ = 0;
+
+            if (!animate) {
+                mesh.rotation.set(targetRotX, targetRotY, targetRotZ);
+                mesh.scale.set(1, 1, 1);
+                continue;
+            }
+
+            gsap.to(mesh.rotation, {
+                x: targetRotX,
+                y: targetRotY,
+                z: targetRotZ,
+                duration: 0.45,
+                ease: 'power2.inOut',
+                overwrite: 'auto',
+            });
+            gsap.to(mesh.scale, {
+                x: 1,
+                y: 1,
+                z: 1,
+                duration: 0.45,
+                ease: 'power2.inOut',
+                overwrite: 'auto',
+            });
+        }
+    }
+
     public setPlayerCardMeshes(meshes: THREE.Mesh[]): void {
         this.playerCardMeshes = meshes;
+        this.updatePlayerCardRotations(false);
     }
 
     public setInteractive(isInteractive: boolean): void {
@@ -260,16 +469,37 @@ export class SceneManager {
 
         const hoveredIndex = this.playerCardMeshes.indexOf(firstMesh);
 
-        if (hoveredIndex !== -1 && SLOTS.PLAYER_HAND[hoveredIndex]) {
-            const baseSlot = SLOTS.PLAYER_HAND[hoveredIndex];
-            gsap.to(firstMesh.position, {
-                y: baseSlot.y + 0.35,
-                z: baseSlot.z - 0.28,
-                duration: 0.3,
+        if (hoveredIndex === -1 || !SLOTS.PLAYER_HAND[hoveredIndex]) {
+            return;
+        }
+
+        const baseSlot = SLOTS.PLAYER_HAND[hoveredIndex];
+
+        if (this.viewMode === '2D') {
+            gsap.to(firstMesh.scale, {
+                x: 1.18,
+                y: 1.18,
+                z: 1.18,
+                duration: 0.25,
                 ease: 'power2.out',
                 overwrite: 'auto',
             });
+            gsap.to(firstMesh.position, {
+                y: baseSlot.y + 0.2,
+                duration: 0.25,
+                ease: 'power2.out',
+                overwrite: 'auto',
+            });
+            return;
         }
+
+        gsap.to(firstMesh.position, {
+            y: baseSlot.y + 0.35,
+            z: baseSlot.z - 0.28,
+            duration: 0.25,
+            ease: 'power2.out',
+            overwrite: 'auto',
+        });
     }
 
     private resetHoverState(): void {
@@ -283,13 +513,33 @@ export class SceneManager {
 
         if (hoveredIndex !== -1 && SLOTS.PLAYER_HAND[hoveredIndex]) {
             const originalSlot = SLOTS.PLAYER_HAND[hoveredIndex];
-            gsap.to(meshToReset.position, {
-                y: originalSlot.y,
-                z: originalSlot.z,
-                duration: 0.3,
-                ease: 'power2.out',
-                overwrite: 'auto',
-            });
+
+            if (this.viewMode === '2D') {
+                gsap.to(meshToReset.scale, {
+                    x: 1.0,
+                    y: 1.0,
+                    z: 1.0,
+                    duration: 0.25,
+                    ease: 'power2.out',
+                    overwrite: 'auto',
+                });
+                gsap.to(meshToReset.position, {
+                    y: originalSlot.y,
+                    duration: 0.25,
+                    ease: 'power2.out',
+                    overwrite: 'auto',
+                });
+            }
+
+            if (this.viewMode === '3D') {
+                gsap.to(meshToReset.position, {
+                    y: originalSlot.y,
+                    z: originalSlot.z,
+                    duration: 0.25,
+                    ease: 'power2.out',
+                    overwrite: 'auto',
+                });
+            }
         }
 
         this.hoveredMesh = null;
