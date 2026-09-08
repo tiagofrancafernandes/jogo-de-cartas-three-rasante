@@ -11,6 +11,13 @@ export interface UIActionHandlers {
     onCycleDistance?: () => void;
 }
 
+export const RULES_ZOOM_LEVELS = [
+    { level: 0, label: '100%', fontSize: '0.875rem' },
+    { level: 1, label: '115%', fontSize: '1rem' },
+    { level: 2, label: '130%', fontSize: '1.125rem' },
+    { level: 3, label: '150%', fontSize: '1.25rem' },
+];
+
 export class UIManager {
     private scoreHistory: ScoreHistory;
     private handlers: UIActionHandlers;
@@ -18,6 +25,7 @@ export class UIManager {
     private currentViewMode: '3D' | '2D' = '3D';
     private currentDistance: 'far' | 'normal' | 'near' = 'normal';
     private isGameInProgress: boolean = false;
+    private rulesZoomLevel: number = 0;
     private lastStatusMessage: string = '';
     private lastMatchData: {
         outcome: RoundOutcome;
@@ -29,9 +37,11 @@ export class UIManager {
     public constructor(scoreHistory: ScoreHistory, handlers: UIActionHandlers) {
         this.scoreHistory = scoreHistory;
         this.handlers = handlers;
+        this.rulesZoomLevel = this.loadRulesZoomPreference();
 
         this.mountDOM();
         this.bindEvents();
+        this.applyRulesZoom();
 
         i18n.subscribe(() => {
             this.refreshTexts();
@@ -392,6 +402,98 @@ export class UIManager {
         modal.classList.remove('flex');
     }
 
+    public getRulesZoomLevel(): number {
+        return this.rulesZoomLevel;
+    }
+
+    public zoomInRules(): void {
+        if (this.rulesZoomLevel >= RULES_ZOOM_LEVELS.length - 1) {
+            return;
+        }
+
+        this.rulesZoomLevel++;
+        this.saveRulesZoomPreference();
+        this.applyRulesZoom();
+    }
+
+    public zoomOutRules(): void {
+        if (this.rulesZoomLevel <= 0) {
+            return;
+        }
+
+        this.rulesZoomLevel--;
+        this.saveRulesZoomPreference();
+        this.applyRulesZoom();
+    }
+
+    public applyRulesZoom(): void {
+        const container = document.getElementById('rules-content-container');
+        const zoomLevelLabel = document.getElementById('label-rules-zoom-level');
+        const zoomOutBtn = document.getElementById('btn-rules-zoom-out') as HTMLButtonElement | null;
+        const zoomInBtn = document.getElementById('btn-rules-zoom-in') as HTMLButtonElement | null;
+        const config = RULES_ZOOM_LEVELS[this.rulesZoomLevel] || RULES_ZOOM_LEVELS[0];
+
+        if (container) {
+            container.style.fontSize = config.fontSize;
+        }
+
+        if (zoomLevelLabel) {
+            zoomLevelLabel.textContent = config.label;
+        }
+
+        if (zoomOutBtn) {
+            const isMinZoom = this.rulesZoomLevel <= 0;
+            zoomOutBtn.disabled = isMinZoom;
+            if (isMinZoom) {
+                zoomOutBtn.classList.add('opacity-30', 'cursor-not-allowed');
+                zoomOutBtn.classList.remove('hover:bg-slate-700', 'cursor-pointer');
+            }
+            if (!isMinZoom) {
+                zoomOutBtn.classList.remove('opacity-30', 'cursor-not-allowed');
+                zoomOutBtn.classList.add('hover:bg-slate-700', 'cursor-pointer');
+            }
+        }
+
+        if (zoomInBtn) {
+            const isMaxZoom = this.rulesZoomLevel >= RULES_ZOOM_LEVELS.length - 1;
+            zoomInBtn.disabled = isMaxZoom;
+            if (isMaxZoom) {
+                zoomInBtn.classList.add('opacity-30', 'cursor-not-allowed');
+                zoomInBtn.classList.remove('hover:bg-slate-700', 'cursor-pointer');
+            }
+            if (!isMaxZoom) {
+                zoomInBtn.classList.remove('opacity-30', 'cursor-not-allowed');
+                zoomInBtn.classList.add('hover:bg-slate-700', 'cursor-pointer');
+            }
+        }
+    }
+
+    private loadRulesZoomPreference(): number {
+        try {
+            const stored = localStorage.getItem('rasante_rules_font_zoom');
+            if (!stored) {
+                return 0;
+            }
+
+            const parsed = parseInt(stored, 10);
+            if (isNaN(parsed) || parsed < 0 || parsed > 3) {
+                return 0;
+            }
+
+            return parsed;
+        } catch {
+            return 0;
+        }
+    }
+
+    private saveRulesZoomPreference(): void {
+        try {
+            localStorage.setItem('rasante_rules_font_zoom', this.rulesZoomLevel.toString());
+        } catch {
+            // LocalStorage unavailable
+        }
+    }
+
     public showRulesModal(): void {
         const modal = document.getElementById('modal-rules');
 
@@ -400,6 +502,7 @@ export class UIManager {
         }
 
         this.renderRulesContent();
+        this.applyRulesZoom();
         modal.classList.remove('hidden');
         modal.classList.add('flex');
     }
@@ -634,17 +737,38 @@ export class UIManager {
       <!-- Rules Guide Modal -->
       <div id="modal-rules" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md hidden items-center justify-center z-50 p-4">
         <div class="bg-slate-900 border border-slate-700 rounded-3xl p-6 max-w-2xl w-full shadow-2xl flex flex-col gap-4 max-h-[90vh]">
-          <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-            <div class="flex items-center gap-3">
-              <iconify-icon icon="fa7-solid:book-open" class="w-6 h-6 text-emerald-400 text-2xl"></iconify-icon>
-              <h2 id="label-rules-title" class="text-xl font-black text-white tracking-wide uppercase label-rules-title">${t.rulesModalTitle}</h2>
+          <div class="flex items-center justify-between border-b border-slate-800 pb-3 gap-3 flex-wrap sm:flex-nowrap">
+            <div class="flex items-center gap-2.5 min-w-0">
+              <iconify-icon icon="fa7-solid:book-open" class="w-6 h-6 text-emerald-400 text-2xl shrink-0"></iconify-icon>
+              <h2 id="label-rules-title" class="text-base sm:text-lg font-black text-white tracking-wide uppercase label-rules-title truncate">${t.rulesModalTitle}</h2>
             </div>
-            <button id="btn-close-rules" class="p-2 text-slate-400 hover:text-white transition cursor-pointer" title="${t.close}">
-              <iconify-icon icon="fa7-solid:xmark" class="w-6 h-6 text-2xl"></iconify-icon>
-            </button>
+
+            <!-- Zoom & Close Controls Group -->
+            <div class="flex items-center gap-1.5 bg-slate-950/70 border border-slate-800 rounded-xl p-1 shrink-0">
+              <span class="text-[11px] font-bold text-slate-400 px-1 flex items-center gap-1">
+                <iconify-icon icon="fa7-solid:font" class="w-3 h-3 text-slate-400"></iconify-icon>
+                <span id="label-rules-zoom-text">${t.zoomText}</span>
+              </span>
+
+              <button id="btn-rules-zoom-out" class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 transition cursor-pointer flex items-center justify-center" title="${t.zoomOut}">
+                <iconify-icon icon="fa7-solid:magnifying-glass-minus" class="w-3.5 h-3.5"></iconify-icon>
+              </button>
+
+              <span id="label-rules-zoom-level" class="text-xs font-mono font-bold text-amber-400 min-w-[2.5rem] text-center">100%</span>
+
+              <button id="btn-rules-zoom-in" class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 transition cursor-pointer flex items-center justify-center" title="${t.zoomIn}">
+                <iconify-icon icon="fa7-solid:magnifying-glass-plus" class="w-3.5 h-3.5"></iconify-icon>
+              </button>
+
+              <div class="h-4 w-px bg-slate-800 mx-0.5"></div>
+
+              <button id="btn-close-rules" class="p-1.5 text-slate-400 hover:text-white transition cursor-pointer" title="${t.close}">
+                <iconify-icon icon="fa7-solid:xmark" class="w-5 h-5 text-xl"></iconify-icon>
+              </button>
+            </div>
           </div>
 
-          <div id="rules-content-container" class="overflow-y-auto flex-1 pr-2 flex flex-col gap-4 text-slate-300 text-sm leading-relaxed">
+          <div id="rules-content-container" class="overflow-y-auto flex-1 pr-2 flex flex-col gap-4 text-slate-300 transition-all duration-150">
           </div>
 
           <div class="flex justify-end pt-2 border-t border-slate-800">
@@ -830,6 +954,21 @@ export class UIManager {
         if (closeRulesBottomButton) {
             closeRulesBottomButton.addEventListener('click', () => {
                 this.hideRulesModal();
+            });
+        }
+
+        const zoomInRulesBtn = document.getElementById('btn-rules-zoom-in');
+        const zoomOutRulesBtn = document.getElementById('btn-rules-zoom-out');
+
+        if (zoomInRulesBtn) {
+            zoomInRulesBtn.addEventListener('click', () => {
+                this.zoomInRules();
+            });
+        }
+
+        if (zoomOutRulesBtn) {
+            zoomOutRulesBtn.addEventListener('click', () => {
+                this.zoomOutRules();
             });
         }
 
@@ -1070,46 +1209,48 @@ export class UIManager {
         }
 
         container.innerHTML = `
-            <section class="bg-slate-950/60 p-4 rounded-xl border border-slate-800/80">
-              <h3 class="font-bold text-emerald-400 mb-1 flex items-center gap-2">
-                <iconify-icon icon="fa7-solid:bullseye" class="w-4 h-4"></iconify-icon>
+            <section class="bg-slate-950/60 p-4 rounded-xl border border-slate-800/80 flex flex-col gap-1.5">
+              <h3 class="font-bold text-emerald-400 flex items-center gap-2 text-[1.1em]">
+                <iconify-icon icon="fa7-solid:bullseye" class="w-[1.15em] h-[1.15em] shrink-0"></iconify-icon>
                 <span>${t.rulesObjectiveTitle}</span>
               </h3>
-              <p class="text-xs text-slate-300">${t.rulesObjectiveText}</p>
+              <p class="text-slate-300 leading-[1.85] text-[1em]">${t.rulesObjectiveText}</p>
             </section>
 
-            <section class="bg-slate-950/60 p-4 rounded-xl border border-slate-800/80">
-              <h3 class="font-bold text-amber-400 mb-1 flex items-center gap-2">
-                <iconify-icon icon="fa7-solid:scale-balanced" class="w-4 h-4"></iconify-icon>
+            <section class="bg-slate-950/60 p-4 rounded-xl border border-slate-800/80 flex flex-col gap-1.5">
+              <h3 class="font-bold text-amber-400 flex items-center gap-2 text-[1.1em]">
+                <iconify-icon icon="fa7-solid:scale-balanced" class="w-[1.15em] h-[1.15em] shrink-0"></iconify-icon>
                 <span>${t.rulesValuesTitle}</span>
               </h3>
-              <p class="text-xs text-slate-300 whitespace-pre-line">${t.rulesValuesText}</p>
+              <p class="text-slate-300 whitespace-pre-line leading-[1.85] text-[1em]">${t.rulesValuesText}</p>
             </section>
 
-            <section class="bg-slate-950/60 p-4 rounded-xl border border-slate-800/80">
-              <h3 class="font-bold text-sky-400 mb-1 flex items-center gap-2">
-                <iconify-icon icon="fa7-solid:play" class="w-4 h-4"></iconify-icon>
+            <section class="bg-slate-950/60 p-4 rounded-xl border border-slate-800/80 flex flex-col gap-1.5">
+              <h3 class="font-bold text-sky-400 flex items-center gap-2 text-[1.1em]">
+                <iconify-icon icon="fa7-solid:play" class="w-[1.15em] h-[1.15em] shrink-0"></iconify-icon>
                 <span>${t.rulesTurnTitle}</span>
               </h3>
-              <p class="text-xs text-slate-300 whitespace-pre-line">${t.rulesTurnText}</p>
+              <p class="text-slate-300 whitespace-pre-line leading-[1.85] text-[1em]">${t.rulesTurnText}</p>
             </section>
 
-            <section class="bg-slate-950/60 p-4 rounded-xl border border-slate-800/80">
-              <h3 class="font-bold text-rose-400 mb-1 flex items-center gap-2">
-                <iconify-icon icon="fa7-solid:crown" class="w-4 h-4"></iconify-icon>
+            <section class="bg-slate-950/60 p-4 rounded-xl border border-slate-800/80 flex flex-col gap-1.5">
+              <h3 class="font-bold text-rose-400 flex items-center gap-2 text-[1.1em]">
+                <iconify-icon icon="fa7-solid:crown" class="w-[1.15em] h-[1.15em] shrink-0"></iconify-icon>
                 <span>${t.rulesKingTitle}</span>
               </h3>
-              <p class="text-xs text-slate-300">${t.rulesKingText}</p>
+              <p class="text-slate-300 leading-[1.85] text-[1em]">${t.rulesKingText}</p>
             </section>
 
-            <section class="bg-slate-950/60 p-4 rounded-xl border border-slate-800/80">
-              <h3 class="font-bold text-yellow-400 mb-1 flex items-center gap-2">
-                <iconify-icon icon="fa7-solid:trophy" class="w-4 h-4"></iconify-icon>
+            <section class="bg-slate-950/60 p-4 rounded-xl border border-slate-800/80 flex flex-col gap-1.5">
+              <h3 class="font-bold text-yellow-400 flex items-center gap-2 text-[1.1em]">
+                <iconify-icon icon="fa7-solid:trophy" class="w-[1.15em] h-[1.15em] shrink-0"></iconify-icon>
                 <span>${t.rulesLandingTitle}</span>
               </h3>
-              <p class="text-xs text-slate-300">${t.rulesLandingText}</p>
+              <p class="text-slate-300 leading-[1.85] text-[1em]">${t.rulesLandingText}</p>
             </section>
         `;
+
+        this.applyRulesZoom();
     }
 
     private translateCurrentStatus(): void {
@@ -1214,6 +1355,22 @@ export class UIManager {
 
         if (labelStartHero) {
             labelStartHero.textContent = t.startModalButton;
+        }
+
+        const zoomInRulesBtn = document.getElementById('btn-rules-zoom-in');
+        const zoomOutRulesBtn = document.getElementById('btn-rules-zoom-out');
+        const labelRulesZoomText = document.getElementById('label-rules-zoom-text');
+
+        if (zoomInRulesBtn) {
+            zoomInRulesBtn.setAttribute('title', t.zoomIn);
+        }
+
+        if (zoomOutRulesBtn) {
+            zoomOutRulesBtn.setAttribute('title', t.zoomOut);
+        }
+
+        if (labelRulesZoomText) {
+            labelRulesZoomText.textContent = t.zoomText;
         }
 
         const drawLabel = document.getElementById('btn-draw-label');
