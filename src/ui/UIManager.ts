@@ -300,10 +300,14 @@ export class UIManager {
             return;
         }
 
+        if (modal.classList.contains('hidden')) {
+            return;
+        }
+
         modal.classList.add('hidden');
         modal.classList.remove('flex');
 
-        if (!triggeredByPlayAgain && !triggeredBySave && !this.isGameInProgress && this.hasCompletedMatch) {
+        if (!triggeredByPlayAgain && !triggeredBySave && !this.isGameInProgress) {
             this.showStartModal();
         }
     }
@@ -313,6 +317,7 @@ export class UIManager {
 
         if (inProgress) {
             this.hasCompletedMatch = false;
+            this.hasSavedCurrentMatch = false;
         }
 
         this.updateRestartButtonState();
@@ -366,6 +371,10 @@ export class UIManager {
             return;
         }
 
+        if (modal.classList.contains('hidden')) {
+            return;
+        }
+
         modal.classList.add('hidden');
         modal.classList.remove('flex');
     }
@@ -385,6 +394,10 @@ export class UIManager {
         const modal = document.getElementById('modal-confirm-clear-history');
 
         if (!modal) {
+            return;
+        }
+
+        if (modal.classList.contains('hidden')) {
             return;
         }
 
@@ -411,8 +424,10 @@ export class UIManager {
             nameInput.value = this.scoreHistory.getLastPlayerName();
         }
 
+        const isAfterCompletedMatch = this.hasCompletedMatch || this.lastMatchData !== null;
+
         const isUnsavedWin =
-            this.hasCompletedMatch && this.lastMatchData?.outcome === 'PLAYER_WON' && !this.hasSavedCurrentMatch;
+            isAfterCompletedMatch && this.lastMatchData?.outcome === 'PLAYER_WON' && !this.hasSavedCurrentMatch;
 
         if (saveButton) {
             if (isUnsavedWin) {
@@ -424,7 +439,7 @@ export class UIManager {
             }
         }
 
-        if (this.hasCompletedMatch) {
+        if (isAfterCompletedMatch) {
             if (titleElement) {
                 titleElement.textContent = t.newMatch;
             }
@@ -442,7 +457,7 @@ export class UIManager {
             }
         }
 
-        if (!this.hasCompletedMatch) {
+        if (!isAfterCompletedMatch) {
             if (titleElement) {
                 titleElement.textContent = t.startModalTitle;
             }
@@ -471,6 +486,10 @@ export class UIManager {
             return;
         }
 
+        if (modal.classList.contains('hidden')) {
+            return;
+        }
+
         modal.classList.add('hidden');
         modal.classList.remove('flex');
     }
@@ -483,7 +502,8 @@ export class UIManager {
             return;
         }
 
-        const isAfterMatch = !this.isGameInProgress && this.hasCompletedMatch;
+        this.hideStartModal();
+        const isAfterMatch = !this.isGameInProgress;
 
         if (playAgainBtn) {
             if (isAfterMatch) {
@@ -506,10 +526,14 @@ export class UIManager {
             return;
         }
 
+        if (modal.classList.contains('hidden')) {
+            return;
+        }
+
         modal.classList.add('hidden');
         modal.classList.remove('flex');
 
-        if (!triggeredByPlayAgain && !this.isGameInProgress && this.hasCompletedMatch) {
+        if (!triggeredByPlayAgain && !this.isGameInProgress) {
             this.showStartModal();
         }
     }
@@ -626,8 +650,16 @@ export class UIManager {
             return;
         }
 
+        if (modal.classList.contains('hidden')) {
+            return;
+        }
+
         modal.classList.add('hidden');
         modal.classList.remove('flex');
+
+        if (!this.isGameInProgress) {
+            this.showStartModal();
+        }
     }
 
     private mountDOM(): void {
@@ -1667,8 +1699,10 @@ export class UIManager {
         const labelRulesHero = document.getElementById('label-rules-hero');
         const labelStartHero = document.getElementById('label-start-hero');
 
+        const isAfterCompletedMatch = this.hasCompletedMatch || this.lastMatchData !== null;
+
         if (startModalTitle) {
-            startModalTitle.textContent = this.hasCompletedMatch ? t.newMatch : t.startModalTitle;
+            startModalTitle.textContent = isAfterCompletedMatch ? t.newMatch : t.startModalTitle;
         }
 
         if (startModalSubtitle) {
@@ -1681,12 +1715,12 @@ export class UIManager {
 
         if (labelStartHero) {
             const isUnsavedWin =
-                this.hasCompletedMatch && this.lastMatchData?.outcome === 'PLAYER_WON' && !this.hasSavedCurrentMatch;
+                isAfterCompletedMatch && this.lastMatchData?.outcome === 'PLAYER_WON' && !this.hasSavedCurrentMatch;
 
-            if (this.hasCompletedMatch) {
+            if (isAfterCompletedMatch) {
                 labelStartHero.textContent = isUnsavedWin ? t.playAgainNoSave : t.playAgain;
             }
-            if (!this.hasCompletedMatch) {
+            if (!isAfterCompletedMatch) {
                 labelStartHero.textContent = t.startModalButton;
             }
         }
