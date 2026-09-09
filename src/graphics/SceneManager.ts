@@ -137,6 +137,7 @@ export class SceneManager {
 
         this.setupEnvironment();
         this.setupEventListeners();
+        this.handleResize();
     }
 
     public getScene(): THREE.Scene {
@@ -312,7 +313,19 @@ export class SceneManager {
         const width = this.container.clientWidth || window.innerWidth;
         const height = this.container.clientHeight || window.innerHeight;
 
-        this.camera.aspect = width / height;
+        const aspect = width / height;
+        this.camera.aspect = aspect;
+
+        const defaultFov = 40;
+        if (aspect < 1.0) {
+            const fovCompensation = Math.min(62, defaultFov / Math.max(0.52, aspect * 1.15));
+            this.camera.fov = fovCompensation;
+        }
+
+        if (aspect >= 1.0) {
+            this.camera.fov = defaultFov;
+        }
+
         this.camera.updateProjectionMatrix();
         this.renderer.setSize(width, height);
     }

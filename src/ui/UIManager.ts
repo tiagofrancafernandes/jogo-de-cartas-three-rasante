@@ -8,7 +8,9 @@ export interface UIActionHandlers {
     onPousar: () => void;
     onNewGame: () => void;
     onToggleViewMode?: () => void;
+    onSetViewMode?: (mode: '3D' | '2D') => void;
     onCycleDistance?: () => void;
+    onSetDistance?: (distance: 'far' | 'normal' | 'near') => void;
 }
 
 export const RULES_ZOOM_LEVELS = [
@@ -54,25 +56,36 @@ export class UIManager {
     public updateStatus(message: string, isCpuThinking: boolean = false): void {
         this.lastStatusMessage = message;
         const statusTextElement = document.getElementById('ui-status-text');
+        const statusTextMobile = document.getElementById('ui-status-text-mobile');
 
-        if (!statusTextElement) {
-            return;
+        if (statusTextElement) {
+            statusTextElement.textContent = message;
         }
 
-        statusTextElement.textContent = message;
+        if (statusTextMobile) {
+            statusTextMobile.textContent = message;
+        }
 
         const spinnerElement = document.getElementById('ui-status-spinner');
+        const spinnerMobile = document.getElementById('ui-status-spinner-mobile');
 
-        if (!spinnerElement) {
-            return;
+        if (spinnerElement) {
+            if (isCpuThinking) {
+                spinnerElement.classList.remove('hidden');
+            }
+            if (!isCpuThinking) {
+                spinnerElement.classList.add('hidden');
+            }
         }
 
-        if (isCpuThinking) {
-            spinnerElement.classList.remove('hidden');
-            return;
+        if (spinnerMobile) {
+            if (isCpuThinking) {
+                spinnerMobile.classList.remove('hidden');
+            }
+            if (!isCpuThinking) {
+                spinnerMobile.classList.add('hidden');
+            }
         }
-
-        spinnerElement.classList.add('hidden');
     }
 
     public updateCounters(deckCount: number, cemeteryCount: number, discardCount: number): void {
@@ -147,6 +160,8 @@ export class UIManager {
         if (buttonElement) {
             buttonElement.setAttribute('title', i18n.t().viewMode);
         }
+
+        this.updateSettingsModalState();
     }
 
     public updateDistanceButton(distance: 'far' | 'normal' | 'near'): void {
@@ -183,6 +198,8 @@ export class UIManager {
         if (buttonElement) {
             buttonElement.setAttribute('title', t.distance);
         }
+
+        this.updateSettingsModalState();
     }
 
     public showGameOverModal(outcome: RoundOutcome, reason: string, playerScore: number, cpuScore: number): void {
@@ -330,26 +347,65 @@ export class UIManager {
         const restartBtn = document.getElementById('btn-restart');
         const iconElement = document.getElementById('icon-restart');
         const labelElement = document.getElementById('label-restart');
+
+        const restartMobileBtn = document.getElementById('btn-restart-mobile');
+        const iconMobile = document.getElementById('icon-restart-mobile');
+        const labelMobile = document.getElementById('label-restart-mobile');
+
+        const restartSettingsBtn = document.getElementById('btn-settings-restart');
+        const iconSettings = document.getElementById('icon-settings-restart');
+        const labelSettings = document.getElementById('label-settings-restart');
+
         const t = i18n.t();
+        const btnTitle = this.isGameInProgress ? t.restartGame : t.startGame;
+        const iconName = this.isGameInProgress ? 'fa7-solid:rotate-right' : 'fa7-solid:play';
 
-        if (!restartBtn || !iconElement || !labelElement) {
-            return;
+        if (restartBtn && iconElement && labelElement) {
+            restartBtn.setAttribute('title', btnTitle);
+            labelElement.textContent = btnTitle;
+            iconElement.setAttribute('icon', iconName);
+
+            if (this.isGameInProgress) {
+                restartBtn.className =
+                    'px-3 py-1.5 rounded-xl bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 border border-rose-800/60 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-sm';
+            }
+
+            if (!this.isGameInProgress) {
+                restartBtn.className =
+                    'px-3 py-1.5 rounded-xl bg-emerald-950/40 hover:bg-emerald-900/60 text-emerald-300 border border-emerald-800/60 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-sm';
+            }
         }
 
-        if (this.isGameInProgress) {
-            restartBtn.setAttribute('title', t.restartGame);
-            labelElement.textContent = t.restartGame;
-            iconElement.setAttribute('icon', 'fa7-solid:rotate-right');
-            restartBtn.className =
-                'px-3 py-1.5 rounded-xl bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 border border-rose-800/60 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-sm';
-            return;
+        if (restartMobileBtn && iconMobile && labelMobile) {
+            restartMobileBtn.setAttribute('title', btnTitle);
+            labelMobile.textContent = btnTitle;
+            iconMobile.setAttribute('icon', iconName);
+
+            if (this.isGameInProgress) {
+                restartMobileBtn.className =
+                    'px-2.5 py-1.5 rounded-xl bg-rose-950/50 hover:bg-rose-900/70 text-rose-300 border border-rose-800/60 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-sm';
+            }
+
+            if (!this.isGameInProgress) {
+                restartMobileBtn.className =
+                    'px-2.5 py-1.5 rounded-xl bg-emerald-950/50 hover:bg-emerald-900/70 text-emerald-300 border border-emerald-800/60 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-sm';
+            }
         }
 
-        restartBtn.setAttribute('title', t.startGame);
-        labelElement.textContent = t.startGame;
-        iconElement.setAttribute('icon', 'fa7-solid:play');
-        restartBtn.className =
-            'px-3 py-1.5 rounded-xl bg-emerald-950/40 hover:bg-emerald-900/60 text-emerald-300 border border-emerald-800/60 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-sm';
+        if (restartSettingsBtn && iconSettings && labelSettings) {
+            labelSettings.textContent = btnTitle;
+            iconSettings.setAttribute('icon', iconName);
+
+            if (this.isGameInProgress) {
+                restartSettingsBtn.className =
+                    'w-full py-2.5 px-3 rounded-xl bg-rose-950/50 hover:bg-rose-900/60 text-rose-300 text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer border border-rose-800/60';
+            }
+
+            if (!this.isGameInProgress) {
+                restartSettingsBtn.className =
+                    'w-full py-2.5 px-3 rounded-xl bg-emerald-950/50 hover:bg-emerald-900/60 text-emerald-300 text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer border border-emerald-800/60';
+            }
+        }
     }
 
     public showConfirmRestartModal(): void {
@@ -665,6 +721,67 @@ export class UIManager {
         }
     }
 
+    public showSettingsModal(): void {
+        const modal = document.getElementById('modal-settings');
+
+        if (!modal) {
+            return;
+        }
+
+        this.updateSettingsModalState();
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    }
+
+    public hideSettingsModal(): void {
+        const modal = document.getElementById('modal-settings');
+
+        if (!modal) {
+            return;
+        }
+
+        if (modal.classList.contains('hidden')) {
+            return;
+        }
+
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
+
+    public updateSettingsModalState(): void {
+        const btnView3d = document.getElementById('btn-settings-view-3d');
+        const btnView2d = document.getElementById('btn-settings-view-2d');
+
+        const activeClass = 'bg-amber-500 text-slate-950 font-black shadow-md';
+        const inactiveClass = 'text-slate-400 hover:text-white font-semibold hover:bg-slate-900';
+
+        if (btnView3d && btnView2d) {
+            const is3d = this.currentViewMode === '3D';
+            btnView3d.className = `py-2.5 px-3 rounded-lg text-xs transition flex items-center justify-center gap-2 cursor-pointer ${is3d ? activeClass : inactiveClass}`;
+            btnView2d.className = `py-2.5 px-3 rounded-lg text-xs transition flex items-center justify-center gap-2 cursor-pointer ${!is3d ? activeClass : inactiveClass}`;
+        }
+
+        const btnDistNear = document.getElementById('btn-settings-dist-near');
+        const btnDistNormal = document.getElementById('btn-settings-dist-normal');
+        const btnDistFar = document.getElementById('btn-settings-dist-far');
+
+        if (btnDistNear && btnDistNormal && btnDistFar) {
+            btnDistNear.className = `py-2.5 px-2 rounded-lg text-xs transition flex items-center justify-center gap-1.5 cursor-pointer ${this.currentDistance === 'near' ? activeClass : inactiveClass}`;
+            btnDistNormal.className = `py-2.5 px-2 rounded-lg text-xs transition flex items-center justify-center gap-1.5 cursor-pointer ${this.currentDistance === 'normal' ? activeClass : inactiveClass}`;
+            btnDistFar.className = `py-2.5 px-2 rounded-lg text-xs transition flex items-center justify-center gap-1.5 cursor-pointer ${this.currentDistance === 'far' ? activeClass : inactiveClass}`;
+        }
+
+        const btnLangPt = document.getElementById('btn-settings-lang-pt');
+        const btnLangEn = document.getElementById('btn-settings-lang-en');
+        const currentLocale = i18n.getLocale();
+
+        if (btnLangPt && btnLangEn) {
+            const isPt = currentLocale === 'pt-BR';
+            btnLangPt.className = `py-2.5 px-3 rounded-lg text-xs transition flex items-center justify-center gap-2 cursor-pointer ${isPt ? activeClass : inactiveClass}`;
+            btnLangEn.className = `py-2.5 px-3 rounded-lg text-xs transition flex items-center justify-center gap-2 cursor-pointer ${!isPt ? activeClass : inactiveClass}`;
+        }
+    }
+
     private mountDOM(): void {
         const appContainer = document.getElementById('app');
 
@@ -680,26 +797,26 @@ export class UIManager {
       <div id="canvas-container" class="absolute inset-0 w-full h-full"></div>
 
       <!-- Top Header & HUD Overlay -->
-      <header class="absolute top-0 left-0 right-0 p-4 pointer-events-none flex justify-between items-start z-10">
+      <header class="absolute top-0 left-0 right-0 p-3 sm:p-4 pointer-events-none flex justify-between items-center md:items-start z-20">
         <!-- Brand & Title -->
-        <div class="pointer-events-auto bg-slate-950/80 backdrop-blur-md px-4 py-2.5 rounded-2xl border border-slate-700/50 shadow-2xl flex items-center gap-3">
-          <div class="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400">
-            <iconify-icon icon="fa7-solid:plane-departure" class="w-5 h-5 text-xl"></iconify-icon>
+        <div class="pointer-events-auto bg-slate-950/80 backdrop-blur-md px-3 sm:px-4 py-2 sm:py-2.5 rounded-2xl border border-slate-700/50 shadow-2xl flex items-center gap-2.5 sm:gap-3">
+          <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400">
+            <iconify-icon icon="fa7-solid:plane-departure" class="w-4 h-4 sm:w-5 sm:h-5 text-lg sm:text-xl"></iconify-icon>
           </div>
           <div>
-            <h1 class="text-lg font-black tracking-wider text-amber-400 uppercase leading-none">${t.gameTitle}</h1>
-            <span id="game-subtitle" class="text-xs text-slate-400 font-medium">${t.gameSubtitle}</span>
+            <h1 class="text-base sm:text-lg font-black tracking-wider text-amber-400 uppercase leading-none">${t.gameTitle}</h1>
+            <span id="game-subtitle" class="hidden sm:inline text-xs text-slate-400 font-medium">${t.gameSubtitle}</span>
           </div>
         </div>
 
-        <!-- Center Status Message -->
-        <div class="pointer-events-auto bg-slate-950/85 backdrop-blur-md px-6 py-2.5 rounded-2xl border border-emerald-500/40 shadow-2xl flex items-center gap-3 max-w-lg mx-2 text-center">
+        <!-- Center Status Message (Desktop) -->
+        <div class="hidden md:flex pointer-events-auto bg-slate-950/85 backdrop-blur-md px-6 py-2.5 rounded-2xl border border-emerald-500/40 shadow-2xl items-center gap-3 max-w-lg mx-2 text-center">
           <iconify-icon id="ui-status-spinner" icon="fa7-solid:spinner" class="w-5 h-5 text-xl text-amber-400 animate-spin hidden"></iconify-icon>
           <span id="ui-status-text" class="text-sm font-semibold text-slate-100">${t.yourTurn}</span>
         </div>
 
-        <!-- Quick Utilities (View Mode, Distance, Language, Rules, History, Reset) -->
-        <div class="pointer-events-auto flex items-center gap-2 bg-slate-950/80 backdrop-blur-md p-1.5 rounded-2xl border border-slate-700/50 shadow-2xl">
+        <!-- Quick Utilities Desktop (md:flex) -->
+        <div class="hidden md:flex pointer-events-auto items-center gap-2 bg-slate-950/80 backdrop-blur-md p-1.5 rounded-2xl border border-slate-700/50 shadow-2xl">
           <!-- View Mode Toggle (3D / 2D) -->
           <button id="btn-toggle-view" class="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer" title="${t.viewMode}">
             <iconify-icon id="icon-view-mode" icon="fa7-solid:cube" class="w-3.5 h-3.5 text-sky-400"></iconify-icon>
@@ -733,64 +850,91 @@ export class UIManager {
             <iconify-icon id="icon-restart" icon="fa7-solid:play" class="w-3.5 h-3.5"></iconify-icon>
             <span id="label-restart">${t.startGame}</span>
           </button>
+
+          <!-- Settings Button -->
+          <button id="btn-open-settings" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-medium transition cursor-pointer" title="${t.settingsTitle}">
+            <iconify-icon icon="fa7-solid:gear" class="w-4 h-4 text-slate-300"></iconify-icon>
+          </button>
+        </div>
+
+        <!-- Quick Utilities Mobile (< md) -->
+        <div class="flex md:hidden pointer-events-auto items-center gap-1.5 bg-slate-950/80 backdrop-blur-md p-1.5 rounded-2xl border border-slate-700/50 shadow-2xl">
+          <!-- Start / Restart Button Mobile -->
+          <button id="btn-restart-mobile" class="px-2.5 py-1.5 rounded-xl bg-emerald-950/50 hover:bg-emerald-900/70 text-emerald-300 border border-emerald-800/60 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-sm" title="${t.startGame}">
+            <iconify-icon id="icon-restart-mobile" icon="fa7-solid:play" class="w-3.5 h-3.5"></iconify-icon>
+            <span id="label-restart-mobile">${t.startGame}</span>
+          </button>
+
+          <!-- Settings Button Mobile (Opens Settings Modal) -->
+          <button id="btn-open-settings-mobile" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-medium transition cursor-pointer" title="${t.settingsTitle}">
+            <iconify-icon icon="fa7-solid:gear" class="w-4 h-4 text-amber-400"></iconify-icon>
+          </button>
         </div>
       </header>
 
+      <!-- Mobile Status Floating Pill -->
+      <div id="mobile-status-container" class="md:hidden fixed top-16 left-1/2 -translate-x-1/2 z-20 w-[92%] max-w-xs pointer-events-none flex justify-center">
+        <div class="pointer-events-auto bg-slate-950/90 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-emerald-500/40 shadow-xl flex items-center justify-center gap-2 text-center">
+          <iconify-icon id="ui-status-spinner-mobile" icon="fa7-solid:spinner" class="w-3.5 h-3.5 text-xs text-amber-400 animate-spin hidden"></iconify-icon>
+          <span id="ui-status-text-mobile" class="text-xs font-semibold text-slate-100">${t.yourTurn}</span>
+        </div>
+      </div>
+
       <!-- Table Piles Counters (Floating HUD) -->
-      <aside class="absolute top-20 left-4 pointer-events-none flex flex-col gap-2 z-10">
+      <aside class="absolute top-24 sm:top-20 left-2 sm:left-4 pointer-events-none flex flex-row sm:flex-col gap-1 sm:gap-2 z-10">
         <!-- Deck Counter -->
-        <div class="bg-slate-950/80 backdrop-blur-md px-3.5 py-2 rounded-xl border border-slate-800 shadow-lg flex items-center gap-2.5 text-xs text-slate-300">
-          <iconify-icon icon="mdi:cards-playing-outline" class="w-4 h-4 text-sky-400"></iconify-icon>
-          <span class="label-deck-count">${t.deckCount}:</span>
-          <span id="count-deck" class="font-extrabold text-white text-sm">45</span>
+        <div class="bg-slate-950/85 backdrop-blur-md px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl border border-slate-800 shadow-lg flex items-center gap-1.5 sm:gap-2.5 text-[11px] sm:text-xs text-slate-300">
+          <iconify-icon icon="mdi:cards-playing-outline" class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-sky-400"></iconify-icon>
+          <span class="label-deck-count hidden sm:inline">${t.deckCount}:</span>
+          <span id="count-deck" class="font-extrabold text-white text-xs sm:text-sm">45</span>
         </div>
 
         <!-- Discard Counter -->
-        <div class="bg-slate-950/80 backdrop-blur-md px-3.5 py-2 rounded-xl border border-slate-800 shadow-lg flex items-center gap-2.5 text-xs text-slate-300">
-          <iconify-icon icon="fa7-solid:trash-can" class="w-4 h-4 text-slate-400"></iconify-icon>
-          <span class="label-discard-count">${t.discardCount}:</span>
-          <span id="count-discard" class="font-extrabold text-white text-sm">0</span>
+        <div class="bg-slate-950/85 backdrop-blur-md px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl border border-slate-800 shadow-lg flex items-center gap-1.5 sm:gap-2.5 text-[11px] sm:text-xs text-slate-300">
+          <iconify-icon icon="fa7-solid:trash-can" class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-400"></iconify-icon>
+          <span class="label-discard-count hidden sm:inline">${t.discardCount}:</span>
+          <span id="count-discard" class="font-extrabold text-white text-xs sm:text-sm">0</span>
         </div>
 
         <!-- King Cemetery Counter -->
-        <div class="bg-slate-950/80 backdrop-blur-md px-3.5 py-2 rounded-xl border border-amber-900/50 shadow-lg flex items-center gap-2.5 text-xs text-amber-300">
-          <iconify-icon icon="fa7-solid:crown" class="w-4 h-4 text-amber-400"></iconify-icon>
-          <span class="label-cemetery-count">${t.cemeteryCount}:</span>
-          <span id="count-cemetery" class="font-extrabold text-white text-sm">0</span>
+        <div class="bg-slate-950/85 backdrop-blur-md px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl border border-amber-900/50 shadow-lg flex items-center gap-1.5 sm:gap-2.5 text-[11px] sm:text-xs text-amber-300">
+          <iconify-icon icon="fa7-solid:crown" class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400"></iconify-icon>
+          <span class="label-cemetery-count hidden sm:inline">${t.cemeteryCount}:</span>
+          <span id="count-cemetery" class="font-extrabold text-white text-xs sm:text-sm">0</span>
         </div>
       </aside>
 
-      <!-- Hand Score Pill (Bottom Left) -->
-      <div class="absolute bottom-6 left-6 pointer-events-none z-10 flex flex-col gap-2">
-        <div class="bg-slate-950/90 backdrop-blur-md px-4 py-2.5 rounded-2xl border border-emerald-500/40 shadow-xl flex items-center gap-3">
-          <iconify-icon icon="fa7-solid:hand" class="w-5 h-5 text-emerald-400"></iconify-icon>
+      <!-- CPU Hand Score Pill (Top Right) -->
+      <div class="absolute top-24 sm:top-20 right-2 sm:right-4 pointer-events-none z-10">
+        <div class="bg-slate-950/85 backdrop-blur-md px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl border border-slate-800 shadow-lg flex items-center gap-1.5 sm:gap-2.5 text-[11px] sm:text-xs text-slate-300">
+          <iconify-icon icon="fa7-solid:robot" class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-rose-400"></iconify-icon>
+          <span class="label-cpu-score hidden sm:inline">${t.cpuScore}:</span>
+          <span id="cpu-score-badge" class="font-extrabold text-white text-xs sm:text-sm">???</span>
+        </div>
+      </div>
+
+      <!-- Hand Score Pill (Bottom Left, safely above bottom bar on mobile) -->
+      <div class="absolute bottom-20 md:bottom-6 left-3 md:left-6 pointer-events-none z-10 flex flex-col gap-2">
+        <div class="bg-slate-950/90 backdrop-blur-md px-3 sm:px-4 py-1.5 sm:py-2.5 rounded-2xl border border-emerald-500/40 shadow-xl flex items-center gap-2.5 sm:gap-3">
+          <iconify-icon icon="fa7-solid:hand" class="w-4 h-4 sm:w-5 sm:h-5 text-emerald-400"></iconify-icon>
           <div>
-            <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider block label-your-score">${t.yourScore}</span>
-            <span id="player-score-badge" class="text-xl font-black text-emerald-400">0 PTS</span>
+            <span class="text-[9px] sm:text-[10px] uppercase font-bold text-slate-400 tracking-wider block label-your-score">${t.yourScore}</span>
+            <span id="player-score-badge" class="text-base sm:text-xl font-black text-emerald-400">0 PTS</span>
           </div>
         </div>
       </div>
 
-      <!-- CPU Hand Score Pill (Top Right) -->
-      <div class="absolute top-20 right-4 pointer-events-none z-10">
-        <div class="bg-slate-950/80 backdrop-blur-md px-3.5 py-2 rounded-xl border border-slate-800 shadow-lg flex items-center gap-2.5 text-xs text-slate-300">
-          <iconify-icon icon="fa7-solid:robot" class="w-4 h-4 text-rose-400"></iconify-icon>
-          <span class="label-cpu-score">${t.cpuScore}:</span>
-          <span id="cpu-score-badge" class="font-extrabold text-white text-sm">???</span>
-        </div>
-      </div>
-
-      <!-- Action Controls Bar (Bottom Center) -->
-      <nav class="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 flex items-center gap-3">
-        <!-- Draw Button -->
-        <button id="btn-draw" class="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-sky-600 to-blue-700 hover:from-sky-500 hover:to-blue-600 text-white font-black text-sm uppercase tracking-wider shadow-xl shadow-sky-950/50 hover:shadow-sky-600/30 transition transform hover:-translate-y-0.5 active:translate-y-0 flex items-center gap-2.5 cursor-pointer border border-sky-400/40">
-          <iconify-icon icon="fa7-solid:layer-group" class="w-5 h-5 text-lg"></iconify-icon>
-          <span id="btn-draw-label">${t.drawCard}</span>
+      <!-- Action Controls Bar: Bottom bar on mobile (< md), split right/bottom on desktop (md:) -->
+      <nav id="action-controls-bar" class="fixed bottom-3 left-3 right-3 md:contents z-10 flex items-center gap-2.5 pointer-events-auto">
+        <!-- Draw Button: Bottom left on mobile, right center floating on desktop -->
+        <button id="btn-draw" class="flex-1 md:flex-none md:fixed md:right-5 md:top-1/2 md:-translate-y-1/2 z-10 py-3.5 px-3 md:py-5 md:px-4 rounded-2xl bg-gradient-to-r md:bg-gradient-to-b from-sky-600 to-blue-700 hover:from-sky-500 hover:to-blue-600 text-white font-black text-xs md:text-sm uppercase tracking-wider shadow-xl shadow-sky-950/50 hover:shadow-sky-600/30 transition transform hover:-translate-y-0.5 md:hover:-translate-y-1 active:translate-y-0 flex md:flex-col items-center justify-center gap-2 md:gap-2.5 cursor-pointer border border-sky-400/40 min-h-[48px] md:min-w-[96px]">
+          <iconify-icon icon="fa7-solid:layer-group" class="w-4 h-4 md:w-5 md:h-5 text-base md:text-xl"></iconify-icon>
+          <span id="btn-draw-label" class="text-center leading-tight">${t.drawCard}</span>
         </button>
 
-        <!-- Pousar! Button -->
-        <button id="btn-pousar" class="px-8 py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 via-amber-600 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black text-base uppercase tracking-widest shadow-2xl glow-pousar transition transform hover:-translate-y-0.5 active:translate-y-0 flex items-center gap-2.5 cursor-pointer border border-yellow-300/80">
-          <iconify-icon icon="fa7-solid:plane-arrival" class="w-6 h-6 text-xl"></iconify-icon>
+        <!-- Pousar! Button: Bottom right on mobile, bottom center on desktop -->
+        <button id="btn-pousar" class="flex-1 md:flex-none md:fixed md:bottom-6 md:left-1/2 md:-translate-x-1/2 z-10 py-3.5 px-4 md:px-8 rounded-2xl bg-gradient-to-r from-amber-500 via-amber-600 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black text-xs sm:text-sm md:text-base uppercase tracking-widest shadow-2xl glow-pousar transition transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2 md:gap-2.5 cursor-pointer border border-yellow-300/80 min-h-[48px]">
+          <iconify-icon icon="fa7-solid:plane-arrival" class="w-4 h-4 md:w-6 md:h-6 text-base md:text-xl"></iconify-icon>
           <span id="btn-pousar-label">${t.pousar}</span>
         </button>
       </nav>
@@ -990,6 +1134,98 @@ export class UIManager {
               <span id="btn-confirm-clear-history-label">${t.confirmClearHistoryYes}</span>
             </button>
           </div>
+        </div>
+      </div>
+
+      <!-- Settings Modal -->
+      <div id="modal-settings" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md hidden items-center justify-center z-50 p-4">
+        <div class="bg-slate-900 border border-slate-700 rounded-3xl p-5 sm:p-6 max-w-md w-full shadow-2xl flex flex-col gap-4 max-h-[90vh] overflow-y-auto">
+          <!-- Header -->
+          <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+            <div class="flex items-center gap-2.5">
+              <div class="w-8 h-8 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400">
+                <iconify-icon icon="fa7-solid:gear" class="w-4 h-4 text-base"></iconify-icon>
+              </div>
+              <h2 id="modal-settings-title" class="text-base sm:text-lg font-black text-white tracking-wide uppercase">${t.settingsTitle}</h2>
+            </div>
+            <button id="btn-close-settings" class="p-2 text-slate-400 hover:text-white transition cursor-pointer" title="${t.close}">
+              <iconify-icon icon="fa7-solid:xmark" class="w-5 h-5 text-xl"></iconify-icon>
+            </button>
+          </div>
+
+          <!-- Section: View Mode (3D / 2D) -->
+          <div class="flex flex-col gap-1.5">
+            <span id="label-settings-view-mode" class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">${t.viewMode}</span>
+            <div class="grid grid-cols-2 gap-2 bg-slate-950 p-1.5 rounded-xl border border-slate-800">
+              <button id="btn-settings-view-3d" class="py-2.5 px-3 rounded-lg text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer">
+                <iconify-icon icon="fa7-solid:cube" class="w-4 h-4 text-sky-400"></iconify-icon>
+                <span id="label-settings-view-3d">${t.viewMode3D}</span>
+              </button>
+              <button id="btn-settings-view-2d" class="py-2.5 px-3 rounded-lg text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer">
+                <iconify-icon icon="fa7-solid:table-cells" class="w-4 h-4 text-amber-400"></iconify-icon>
+                <span id="label-settings-view-2d">${t.viewMode2D}</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Section: Camera Distance (Near / Normal / Far) -->
+          <div class="flex flex-col gap-1.5">
+            <span id="label-settings-camera-dist" class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">${t.cameraDistance}</span>
+            <div class="grid grid-cols-3 gap-1.5 bg-slate-950 p-1.5 rounded-xl border border-slate-800">
+              <button id="btn-settings-dist-near" class="py-2.5 px-1.5 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 cursor-pointer">
+                <iconify-icon icon="fa7-solid:magnifying-glass-plus" class="w-3.5 h-3.5 text-amber-400"></iconify-icon>
+                <span id="label-settings-dist-near">${t.distNear}</span>
+              </button>
+              <button id="btn-settings-dist-normal" class="py-2.5 px-1.5 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 cursor-pointer">
+                <iconify-icon icon="fa7-solid:magnifying-glass" class="w-3.5 h-3.5 text-amber-400"></iconify-icon>
+                <span id="label-settings-dist-normal">${t.distNormal}</span>
+              </button>
+              <button id="btn-settings-dist-far" class="py-2.5 px-1.5 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 cursor-pointer">
+                <iconify-icon icon="fa7-solid:magnifying-glass-minus" class="w-3.5 h-3.5 text-amber-400"></iconify-icon>
+                <span id="label-settings-dist-far">${t.distFar}</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Section: Language -->
+          <div class="flex flex-col gap-1.5">
+            <span id="label-settings-language" class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">${t.language}</span>
+            <div class="grid grid-cols-2 gap-2 bg-slate-950 p-1.5 rounded-xl border border-slate-800">
+              <button id="btn-settings-lang-pt" class="py-2.5 px-3 rounded-lg text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer">
+                <iconify-icon icon="fa7-solid:globe" class="w-3.5 h-3.5 text-slate-400"></iconify-icon>
+                <span>Português</span>
+              </button>
+              <button id="btn-settings-lang-en" class="py-2.5 px-3 rounded-lg text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer">
+                <iconify-icon icon="fa7-solid:globe" class="w-3.5 h-3.5 text-slate-400"></iconify-icon>
+                <span>English</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Section: Quick Actions / Links -->
+          <div class="flex flex-col gap-2 pt-2 border-t border-slate-800">
+            <span id="label-settings-quick-actions" class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">${t.quickActions}</span>
+            <div class="grid grid-cols-2 gap-2">
+              <button id="btn-settings-open-rules" class="py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer border border-slate-700">
+                <iconify-icon icon="fa7-solid:book-open" class="w-4 h-4 text-emerald-400"></iconify-icon>
+                <span class="label-rules-text">${t.rules}</span>
+              </button>
+              <button id="btn-settings-open-history" class="py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer border border-slate-700">
+                <iconify-icon icon="fa7-solid:trophy" class="w-4 h-4 text-amber-400"></iconify-icon>
+                <span class="label-history-text">${t.history}</span>
+              </button>
+            </div>
+            <button id="btn-settings-restart" class="w-full py-2.5 px-3 rounded-xl bg-emerald-950/50 hover:bg-emerald-900/60 text-emerald-300 text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer border border-emerald-800/60">
+              <iconify-icon id="icon-settings-restart" icon="fa7-solid:play" class="w-3.5 h-3.5"></iconify-icon>
+              <span id="label-settings-restart">${t.startGame}</span>
+            </button>
+          </div>
+
+          <!-- Bottom Close Button -->
+          <button id="btn-close-settings-bottom" class="w-full py-3 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition cursor-pointer border border-slate-700 mt-1">
+            <iconify-icon icon="fa7-solid:check" class="w-4 h-4 text-emerald-400"></iconify-icon>
+            <span id="label-close-settings">${t.closeSettings}</span>
+          </button>
         </div>
       </div>
 
@@ -1328,11 +1564,161 @@ export class UIManager {
             });
         }
 
+        const restartMobileButton = document.getElementById('btn-restart-mobile');
+        if (restartMobileButton) {
+            restartMobileButton.addEventListener('click', () => {
+                if (this.isGameInProgress) {
+                    this.showConfirmRestartModal();
+                    return;
+                }
+
+                this.hideStartModal();
+                this.handlers.onNewGame();
+            });
+        }
+
+        const openSettingsButton = document.getElementById('btn-open-settings');
+        if (openSettingsButton) {
+            openSettingsButton.addEventListener('click', () => {
+                this.showSettingsModal();
+            });
+        }
+
+        const openSettingsMobileButton = document.getElementById('btn-open-settings-mobile');
+        if (openSettingsMobileButton) {
+            openSettingsMobileButton.addEventListener('click', () => {
+                this.showSettingsModal();
+            });
+        }
+
+        const closeSettingsButton = document.getElementById('btn-close-settings');
+        if (closeSettingsButton) {
+            closeSettingsButton.addEventListener('click', () => {
+                this.hideSettingsModal();
+            });
+        }
+
+        const closeSettingsBottomButton = document.getElementById('btn-close-settings-bottom');
+        if (closeSettingsBottomButton) {
+            closeSettingsBottomButton.addEventListener('click', () => {
+                this.hideSettingsModal();
+            });
+        }
+
+        const settingsModal = document.getElementById('modal-settings');
+        if (settingsModal) {
+            settingsModal.addEventListener('click', (event) => {
+                if (event.target === settingsModal) {
+                    this.hideSettingsModal();
+                }
+            });
+        }
+
+        const settingsView3dButton = document.getElementById('btn-settings-view-3d');
+        if (settingsView3dButton) {
+            settingsView3dButton.addEventListener('click', () => {
+                if (this.handlers.onSetViewMode) {
+                    this.handlers.onSetViewMode('3D');
+                }
+            });
+        }
+
+        const settingsView2dButton = document.getElementById('btn-settings-view-2d');
+        if (settingsView2dButton) {
+            settingsView2dButton.addEventListener('click', () => {
+                if (this.handlers.onSetViewMode) {
+                    this.handlers.onSetViewMode('2D');
+                }
+            });
+        }
+
+        const settingsDistNearButton = document.getElementById('btn-settings-dist-near');
+        if (settingsDistNearButton) {
+            settingsDistNearButton.addEventListener('click', () => {
+                if (this.handlers.onSetDistance) {
+                    this.handlers.onSetDistance('near');
+                }
+            });
+        }
+
+        const settingsDistNormalButton = document.getElementById('btn-settings-dist-normal');
+        if (settingsDistNormalButton) {
+            settingsDistNormalButton.addEventListener('click', () => {
+                if (this.handlers.onSetDistance) {
+                    this.handlers.onSetDistance('normal');
+                }
+            });
+        }
+
+        const settingsDistFarButton = document.getElementById('btn-settings-dist-far');
+        if (settingsDistFarButton) {
+            settingsDistFarButton.addEventListener('click', () => {
+                if (this.handlers.onSetDistance) {
+                    this.handlers.onSetDistance('far');
+                }
+            });
+        }
+
+        const settingsLangPtButton = document.getElementById('btn-settings-lang-pt');
+        if (settingsLangPtButton) {
+            settingsLangPtButton.addEventListener('click', () => {
+                i18n.setLocale('pt-BR');
+                const langLabel = document.getElementById('label-lang');
+                if (langLabel) {
+                    langLabel.textContent = 'PT';
+                }
+                this.refreshTexts();
+            });
+        }
+
+        const settingsLangEnButton = document.getElementById('btn-settings-lang-en');
+        if (settingsLangEnButton) {
+            settingsLangEnButton.addEventListener('click', () => {
+                i18n.setLocale('en-US');
+                const langLabel = document.getElementById('label-lang');
+                if (langLabel) {
+                    langLabel.textContent = 'EN';
+                }
+                this.refreshTexts();
+            });
+        }
+
+        const settingsOpenRulesButton = document.getElementById('btn-settings-open-rules');
+        if (settingsOpenRulesButton) {
+            settingsOpenRulesButton.addEventListener('click', () => {
+                this.hideSettingsModal();
+                this.showRulesModal();
+            });
+        }
+
+        const settingsOpenHistoryButton = document.getElementById('btn-settings-open-history');
+        if (settingsOpenHistoryButton) {
+            settingsOpenHistoryButton.addEventListener('click', () => {
+                this.hideSettingsModal();
+                this.showHistoryModal();
+            });
+        }
+
+        const settingsRestartButton = document.getElementById('btn-settings-restart');
+        if (settingsRestartButton) {
+            settingsRestartButton.addEventListener('click', () => {
+                this.hideSettingsModal();
+                if (this.isGameInProgress) {
+                    this.showConfirmRestartModal();
+                    return;
+                }
+
+                this.hideStartModal();
+                this.handlers.onNewGame();
+            });
+        }
+
         window.addEventListener('keydown', (event) => {
             if (event.key === 'Escape') {
                 this.hideConfirmClearHistoryModal();
                 this.hideConfirmRestartModal();
                 this.hideRulesModal();
+                this.hideSettingsModal();
                 this.hideHistoryModal(false);
                 this.hideGameOverModal(false, false);
             }
@@ -1872,6 +2258,88 @@ export class UIManager {
         this.translateCurrentStatus();
         this.updateViewModeButton(this.currentViewMode);
         this.updateDistanceButton(this.currentDistance);
+
+        const openSettingsBtn = document.getElementById('btn-open-settings');
+        if (openSettingsBtn) {
+            openSettingsBtn.setAttribute('title', t.settingsTitle);
+        }
+
+        const openSettingsMobileBtn = document.getElementById('btn-open-settings-mobile');
+        if (openSettingsMobileBtn) {
+            openSettingsMobileBtn.setAttribute('title', t.settingsTitle);
+        }
+
+        const modalSettingsTitle = document.getElementById('modal-settings-title');
+        if (modalSettingsTitle) {
+            modalSettingsTitle.textContent = t.settingsTitle;
+        }
+
+        const labelSettingsViewMode = document.getElementById('label-settings-view-mode');
+        if (labelSettingsViewMode) {
+            labelSettingsViewMode.textContent = t.viewMode;
+        }
+
+        const labelSettingsView3d = document.getElementById('label-settings-view-3d');
+        if (labelSettingsView3d) {
+            labelSettingsView3d.textContent = t.viewMode3D;
+        }
+
+        const labelSettingsView2d = document.getElementById('label-settings-view-2d');
+        if (labelSettingsView2d) {
+            labelSettingsView2d.textContent = t.viewMode2D;
+        }
+
+        const labelSettingsCameraDist = document.getElementById('label-settings-camera-dist');
+        if (labelSettingsCameraDist) {
+            labelSettingsCameraDist.textContent = t.cameraDistance;
+        }
+
+        const labelSettingsDistNear = document.getElementById('label-settings-dist-near');
+        if (labelSettingsDistNear) {
+            labelSettingsDistNear.textContent = t.distNear;
+        }
+
+        const labelSettingsDistNormal = document.getElementById('label-settings-dist-normal');
+        if (labelSettingsDistNormal) {
+            labelSettingsDistNormal.textContent = t.distNormal;
+        }
+
+        const labelSettingsDistFar = document.getElementById('label-settings-dist-far');
+        if (labelSettingsDistFar) {
+            labelSettingsDistFar.textContent = t.distFar;
+        }
+
+        const labelSettingsLanguage = document.getElementById('label-settings-language');
+        if (labelSettingsLanguage) {
+            labelSettingsLanguage.textContent = t.language;
+        }
+
+        const labelSettingsQuickActions = document.getElementById('label-settings-quick-actions');
+        if (labelSettingsQuickActions) {
+            labelSettingsQuickActions.textContent = t.quickActions;
+        }
+
+        const labelCloseSettings = document.getElementById('label-close-settings');
+        if (labelCloseSettings) {
+            labelCloseSettings.textContent = t.closeSettings;
+        }
+
+        const rulesLabels = document.querySelectorAll('.label-rules-text');
+        rulesLabels.forEach((label) => {
+            label.textContent = t.rules;
+        });
+
+        const historyLabels = document.querySelectorAll('.label-history-text');
+        historyLabels.forEach((label) => {
+            label.textContent = t.history;
+        });
+
+        const labelLang = document.getElementById('label-lang');
+        if (labelLang) {
+            labelLang.textContent = i18n.getLocale() === 'pt-BR' ? 'PT' : 'EN';
+        }
+
+        this.updateSettingsModalState();
         this.renderRulesContent();
     }
 }

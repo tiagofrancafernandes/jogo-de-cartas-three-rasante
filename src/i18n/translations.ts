@@ -86,6 +86,13 @@ export interface Translations {
     playAgainNoSave: string;
     saveAndPlay: string;
     savedBadge: string;
+    settingsTitle: string;
+    viewMode3D: string;
+    viewMode2D: string;
+    cameraDistance: string;
+    language: string;
+    quickActions: string;
+    closeSettings: string;
 }
 
 export const translations: Record<SupportedLocale, Translations> = {
@@ -182,6 +189,13 @@ export const translations: Record<SupportedLocale, Translations> = {
         playAgainNoSave: 'Jogar Novamente',
         saveAndPlay: 'Salvar e Jogar',
         savedBadge: 'Salvo!',
+        settingsTitle: 'Configurações & Opções',
+        viewMode3D: '3D (Perspectiva)',
+        viewMode2D: '2D (Vista Superior)',
+        cameraDistance: 'Distância da Câmera',
+        language: 'Idioma',
+        quickActions: 'Acesso Rápido',
+        closeSettings: 'Voltar ao Jogo',
     },
     'en-US': {
         gameTitle: 'Rasante',
@@ -277,5 +291,12 @@ export const translations: Record<SupportedLocale, Translations> = {
         playAgainNoSave: 'Play Again',
         saveAndPlay: 'Save & Play',
         savedBadge: 'Saved!',
+        settingsTitle: 'Settings & Options',
+        viewMode3D: '3D (Perspective)',
+        viewMode2D: '2D (Top-down)',
+        cameraDistance: 'Camera Distance',
+        language: 'Language',
+        quickActions: 'Quick Actions',
+        closeSettings: 'Back to Game',
     },
 };

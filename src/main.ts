@@ -40,8 +40,17 @@ class GameApp {
             onToggleViewMode: () => {
                 this.handleToggleViewMode();
             },
+            onSetViewMode: (mode) => {
+                this.sceneManager.setViewMode(mode);
+                this.animationQueue.setViewMode(mode);
+                this.uiManager.updateViewModeButton(mode);
+            },
             onCycleDistance: () => {
                 this.handleCycleDistance();
+            },
+            onSetDistance: (dist) => {
+                this.sceneManager.setCameraDistance(dist);
+                this.uiManager.updateDistanceButton(dist);
             },
         });
 
